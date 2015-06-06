@@ -5,8 +5,8 @@
  *      Author: xubuntu
  */
 
-#ifndef SRC_MASTERCOM_H_
-#define SRC_MASTERCOM_H_
+#ifndef MASTERCOM_H_
+#define MASTERCOM_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -15,8 +15,9 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+
 #include "basics.h"
 
 void *listen_for_master(void *timeout_struct);
 
-#endif /* SRC_MASTERCOM_H_ */
+#endif /* MASTERCOM_H_ */

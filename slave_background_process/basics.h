@@ -7,30 +7,36 @@
 #ifndef BASICS_H_INCLUDED
 #define BASICS_H_INCLUDED
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+
 #include <sys/socket.h>
 #include <errno.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+#define ZYNQ7000 "z7"
+#define KINTEX7  "k7"
+#define ARTIX7	 "a7"
+#define VIRTEX7  "v7"
+#define VIRTEX6  "v6"
+#define VIRTEX5  "v5"
+#define VIRTEX4  "v4"
 
 #define PING_PERIOD 2 ///in sek
 #define TIMEOUT_PERIODS 5
-#define ZEDBOARD 1
-#define UDP_PORT 123457
+#define UDP_PORT 12345
 
-void criterr(char *s, int sock);
+//this has to be adjusted for the FPGA in use
+#define FPGATYPE ZYNQ7000
 
-// TODO (kami#8#): check for wrapper
-struct slave_network_param{
+void criterr(char *s);
+
+
+struct thread_param{
 int var;
 pthread_mutex_t mtx;
-int sock;
 };
 
 // BASICS_H_INCLUDED

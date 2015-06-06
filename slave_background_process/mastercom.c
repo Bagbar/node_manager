@@ -23,7 +23,7 @@ void *listen_for_master(void *timeout_struct)
 	///create UDP-Socket Server
 	if ((udp_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		criterr("socket=", udp_sock);
+		criterr("socket=");
 	}
 
 	struct sockaddr_in serv_addr, cli_addr;
@@ -35,7 +35,7 @@ void *listen_for_master(void *timeout_struct)
 
 	if ((bind(udp_sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr))) < 0)
 	{
-		criterr("bind", udp_sock);
+		criterr("bind");
 	}
 
 	while (1)

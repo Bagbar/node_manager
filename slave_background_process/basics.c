@@ -6,9 +6,8 @@
  */
 #include "basics.h"
 
-void criterr(char *s,int sock)
+void criterr(char *s)
 {   perror(s);
-    close(sock);
     exit(1);
 }
 
