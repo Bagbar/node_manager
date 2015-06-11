@@ -26,7 +26,8 @@
 
 #define PING_PERIOD 2 ///in sek
 #define TIMEOUT_PERIODS 5
-#define UDP_PORT 12345
+#define MAST_2_CLI_PORT 12345
+#define CLI_2_MAST_PORT	12346
 
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
