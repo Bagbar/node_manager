@@ -5,8 +5,8 @@
  *      Author: xubuntu
  */
 
-#ifndef MASTERCOM_H_
-#define MASTERCOM_H_
+#ifndef SLAVE_LISTEN_H_
+#define SLAVE_LISTEN_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -18,6 +18,6 @@
 
 #include "basics.h"
 
-void *listen_for_master(void *timeout_struct);
+void *listen_for_master(void *args_struct);
 
-#endif /* MASTERCOM_H_ */
+#endif /* SLAVE_LISTEN_H_ */

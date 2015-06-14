@@ -8,6 +8,6 @@
 #ifndef ELECT_MASTER_H_
 #define ELECT_MASTER_H_
 
-
+int elect_master();
 
 #endif /* ELECT_MASTER_H_ */

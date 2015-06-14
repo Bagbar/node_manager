@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -19,26 +20,27 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+
 int main(void)
 {
 	int i = 0;
 	char cont = 'y';
-	char buf[3];
+
 	int return_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (return_socket < 0)
 		printf("socketerror:%s\n", strerror(errno));
 
-	struct sockaddr_in serv_addr, cli_addr;
+	struct sockaddr_in serv_addr;
 	socklen_t serv_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(50505);
+	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+//	if (inet_aton("127.0.0.1", &serv_addr.sin_addr) == 0)
+//	{
+//		fprintf(stderr, "inet_aton() failed\n");
+//		exit(1);
+//	}
 
-	if (inet_aton("127.0.0.1", &serv_addr.sin_addr) == 0)
-	{
-		fprintf(stderr, "inet_aton() failed\n");
-		exit(1);
-	}
-	//serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	char recvBuff[1024];
 	memset(recvBuff, '0', sizeof(recvBuff));
