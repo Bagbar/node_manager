@@ -6,6 +6,7 @@
  */
 
 #include "slave_listen.h"
+#include "elect_master.h"
 
 #define BUFFERSIZE 10
 
