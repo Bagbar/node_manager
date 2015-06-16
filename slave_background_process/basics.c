@@ -14,7 +14,7 @@ void critErr(char *s)
 uint64_t getDecimalFromMAC()
 {
 
-	unsigned int imac = 0;
+	uint64_t imac = 0;
 	char chr[18];
 	unsigned char mac[6];
 

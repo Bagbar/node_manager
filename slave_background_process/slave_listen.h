@@ -19,5 +19,6 @@
 #include "basics.h"
 
 void *listen_for_master(void *args_struct);
+int elect_master();
 
 #endif /* SLAVE_LISTEN_H_ */

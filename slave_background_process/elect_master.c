@@ -5,7 +5,5 @@
  *      Author: christian
  */
 
-int elect_master()
-{
-return 0;
-}
+
+

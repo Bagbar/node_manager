@@ -26,9 +26,9 @@
 #define VIRTEX4  "v4"
 
 //this can be changed for tweaking make sure every node has the same
-#define PING_PERIOD 2 ///in sek
+#define PING_PERIOD 2 ///in sec
 #define TIMEOUT_PERIODS 5
-#define UDP_NODE_LISTEN_PORT 12345 //used for general comands to Nodes
+#define UDP_NODE_LISTEN_PORT 12345 //used for general commands to Nodes
 #define UDP_N2M_PORT 12346 //slave to master
 #define UDP_ELECT_M_PORT 12347
 

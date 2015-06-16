@@ -6,7 +6,6 @@
  */
 
 #include "slave_listen.h"
-#include "elect_master.h"
 
 #define BUFFERSIZE 10
 
@@ -28,7 +27,7 @@ void *listen_for_master(void *args_struct)
 	struct sockaddr_in serv_addr, cli_addr;
 
 	socklen_t cli_len = sizeof(cli_addr);
-	;
+
 
 	//create UDP-Socket Server
 	if ((recv_mast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -79,6 +78,7 @@ void *listen_for_master(void *args_struct)
 			if (pthread_mutex_lock(&(timeout_counter->mtx)))
 				critErr("listen: mutex_lock:");
 			timeout_counter->var = 0;
+			// TODO check if this is the only call of am_I_master
 			*am_I_master=elect_master();
 			if (pthread_mutex_unlock(&(timeout_counter->mtx)))
 				critErr("listen: mutex_unlock:");
@@ -91,3 +91,35 @@ void *listen_for_master(void *args_struct)
 		}
 	}
 }
+
+
+int elect_master()
+{
+
+	char type_and_MAC[6];
+	type_and_MAC[0]=FPGATYPE[0];
+
+	int elect_send_sock,elect_recv_sock;
+	socklen_t elect_recv_len, elect_send_len= sizeof(elect_send_sock);
+	struct sockaddr_in elect_addr;
+//create UDP-Socket Server
+	if ((elect_send_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		critErr("listen:send_master_socket=");
+	}
+	//Broadcast socket address TODO corresponding master
+	elect_addr.sin_family = AF_INET;
+	elect_addr.sin_port = htons(UDP_ELECT_M_PORT);
+	elect_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
+	if ((bind(elect_send_sock, (struct sockaddr*) &elect_addr,
+			sizeof(elect_addr))) < 0)
+	{
+		critErr("main:bind elect_sock:");
+	}
+
+
+	sendto(elect_send_sock, &type_and_MAC, 1, 0,
+							(struct sockaddr*) &elect_addr, elect_send_len);
+	close(elect_send_sock);
+	return 0;
+	}

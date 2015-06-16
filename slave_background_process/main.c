@@ -21,6 +21,7 @@ int main()
 	int am_I_master=0;
 
 	int send_mast_broad_sock;
+	//TODO change ---v
 	uint64_t MAC = getDecimalFromMAC();
 	srand((unsigned int) MAC);
 	struct timespec rnd_time =
