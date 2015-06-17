@@ -7,7 +7,6 @@
 #ifndef BASICS_H_INCLUDED
 #define BASICS_H_INCLUDED
 
-
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
@@ -35,20 +34,23 @@
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
 
-
 //function to exit the program and return an error description
 void critErr(char *s);
 
-uint64_t getDecimalFromMAC();
+//*mac has to point to an array with at least 6 Byte
+void getMAC(uint8_t *mac);
 
+uint64_t MACtoDecimal(uint8_t *mac);
 
 // struct for storing a variable with a corresponding mutex
-struct var_mtx{
-volatile int var;
-pthread_mutex_t mtx;
+struct var_mtx
+{
+	volatile int var;
+	pthread_mutex_t mtx;
 };
 
-struct thread_args{
+struct thread_args
+{
 	struct var_mtx *timeout_count;
 	int *am_I_master;
 };

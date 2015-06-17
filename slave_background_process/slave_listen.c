@@ -9,13 +9,17 @@
 
 #define BUFFERSIZE 10
 
+//FIXME is this okay??
+extern uint8_t mac[6];
+
 void *listen_for_master(void *args_struct)
 ///  network I/O function for the control communication with the master
 {
 
 	//Variable declarations
 	// TODO test this
-	struct var_mtx *timeout_counter = ((struct thread_args*) args_struct)->timeout_count;
+	struct var_mtx *timeout_counter =
+			((struct thread_args*) args_struct)->timeout_count;
 	int *am_I_master = ((struct thread_args*) args_struct)->am_I_master;
 	char board_type[2] = FPGATYPE;
 
@@ -27,7 +31,6 @@ void *listen_for_master(void *args_struct)
 	struct sockaddr_in serv_addr, cli_addr;
 
 	socklen_t cli_len = sizeof(cli_addr);
-
 
 	//create UDP-Socket Server
 	if ((recv_mast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -79,7 +82,7 @@ void *listen_for_master(void *args_struct)
 				critErr("listen: mutex_lock:");
 			timeout_counter->var = 0;
 			// TODO check if this is the only call of am_I_master
-			*am_I_master=elect_master();
+			*am_I_master = elect_master();
 			if (pthread_mutex_unlock(&(timeout_counter->mtx)))
 				critErr("listen: mutex_unlock:");
 			break;
@@ -92,16 +95,20 @@ void *listen_for_master(void *args_struct)
 	}
 }
 
-
 int elect_master()
 {
+	unsigned char type_and_MAC[8];
+	type_and_MAC[0] = FPGATYPE[0];
+	type_and_MAC[1] = FPGATYPE[1];
+	int i;
+	for (i = 0; i < 6; i++)
+	{
+		type_and_MAC[i + 2] = mac[i];
+	}
 
-	char type_and_MAC[6];
-	type_and_MAC[0]=FPGATYPE[0];
-
-	int elect_send_sock,elect_recv_sock;
-	socklen_t elect_recv_len, elect_send_len= sizeof(elect_send_sock);
+	int elect_send_sock;
 	struct sockaddr_in elect_addr;
+	socklen_t elect_recv_len, elect_send_len = sizeof(elect_addr);
 //create UDP-Socket Server
 	if ((elect_send_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
@@ -117,9 +124,8 @@ int elect_master()
 		critErr("main:bind elect_sock:");
 	}
 
-
-	sendto(elect_send_sock, &type_and_MAC, 1, 0,
-							(struct sockaddr*) &elect_addr, elect_send_len);
+	sendto(elect_send_sock, &type_and_MAC, sizeof(type_and_MAC), 0,
+			(struct sockaddr*) &elect_addr, elect_send_len);
 	close(elect_send_sock);
 	return 0;
-	}
+}

@@ -16,24 +16,29 @@
 #include "basics.h"
 #include "slave_listen.h"
 
+uint8_t mac[6];
+
 int main()
 {
-	int am_I_master=0;
 
-	int send_mast_broad_sock;
-	//TODO change ---v
-	uint64_t MAC = getDecimalFromMAC();
+	getMAC(mac);
+	int am_I_master = 0; // 0=no, 1=yes
+	uint64_t MAC = MACtoDecimal(mac);
 	srand((unsigned int) MAC);
 	struct timespec rnd_time =
 	{ 0, 0 };
 
-	struct sockaddr_in broad_addr;
+	int mast_broad_sock, elect_recv_sock;
+	struct sockaddr_in broad_addr, elect_recv_addr;
 	socklen_t broad_len = sizeof(broad_addr);
+
+
 
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
 
-	struct thread_args bg_listen_args ={&time_count,&am_I_master};
+	struct thread_args bg_listen_args =
+	{ &time_count, &am_I_master };
 
 	pthread_t background_listen;
 	if (pthread_create(&background_listen, NULL, listen_for_master,
@@ -42,8 +47,42 @@ int main()
 		critErr("pthread_create(listen)=");
 	}
 
+
+
+	struct sockaddr_in cli_addr;
+
+
+
+		//create UDP-Socket Server
+		if ((elect_recv_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+		{
+			critErr("main:elect_recv_sock=");
+		}
+
+		//listen socket address TODO corresponding master
+		elect_recv_addr.sin_family = AF_INET;
+		elect_recv_addr.sin_port = htons(UDP_ELECT_M_PORT);
+		elect_recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+		if ((bind(elect_recv_sock, (struct sockaddr*) &elect_recv_addr, sizeof(elect_recv_addr)))
+				< 0)
+		{
+			critErr("main:bind elect_recv_sock:");
+		}
+
+		// waiting for the master and reseting the timeout counter and if needed answering the request
+			//TODO put this where it belongs and check if multiple DGRAMs wait to be called.
+			// Recieve msg from master,
+			int return_recv = recvfrom(elect_recv_sock, recvBuff, 1, 0,
+					(struct sockaddr*) &cli_addr, &cli_len);
+
+
+
+
+
+
 	//create UDP-Socket Server
-	if ((send_mast_broad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	if ((mast_broad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:send_master_socket=");
 	}
@@ -51,10 +90,10 @@ int main()
 	broad_addr.sin_family = AF_INET;
 	broad_addr.sin_port = htons(UDP_NODE_LISTEN_PORT);
 	broad_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
-	if ((bind(send_mast_broad_sock, (struct sockaddr*) &broad_addr,
+	if ((bind(mast_broad_sock, (struct sockaddr*) &broad_addr,
 			sizeof(broad_addr))) < 0)
 	{
-		critErr("main:bind send_mast_broad_sock:");
+		critErr("main:bind mast_broad_sock:");
 	}
 
 	// Timeout-counter for master communication
@@ -84,7 +123,7 @@ int main()
 					critErr("main:no_master mutex_unlock:");
 
 				char timeout_detected = 't';
-				sendto(send_mast_broad_sock, &timeout_detected, 1, 0,
+				sendto(mast_broad_sock, &timeout_detected, 1, 0,
 						(struct sockaddr*) &broad_addr, broad_len);
 				//TODO check if sender receives his broadcast
 
