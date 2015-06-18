@@ -24,7 +24,8 @@
 #define VIRTEX5  "v5"
 #define VIRTEX4  "v4"
 
-//this can be changed for tweaking make sure every node has the same
+//this block can be changed for tweaking make sure every node has the same
+#define EST_NUM_BOARD 10 //estimated number of boards/FPGAs in the cluster used for allocation of arrays too few means more reallocs() too many allocates more unused space
 #define PING_PERIOD 2 ///in sec
 #define TIMEOUT_PERIODS 5
 #define UDP_NODE_LISTEN_PORT 12345 //used for general commands to Nodes

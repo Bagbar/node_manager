@@ -28,15 +28,14 @@ int main()
 	struct timespec rnd_time =
 	{ 0, 0 };
 
-	int mast_broad_sock, elect_recv_sock;
-	struct sockaddr_in broad_addr, elect_recv_addr;
+	int mast_broad_sock;
+	struct sockaddr_in broad_addr;
 	socklen_t broad_len = sizeof(broad_addr);
 
 
 
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
-
 	struct thread_args bg_listen_args =
 	{ &time_count, &am_I_master };
 
@@ -48,33 +47,6 @@ int main()
 	}
 
 
-
-	struct sockaddr_in cli_addr;
-
-
-
-		//create UDP-Socket Server
-		if ((elect_recv_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-		{
-			critErr("main:elect_recv_sock=");
-		}
-
-		//listen socket address TODO corresponding master
-		elect_recv_addr.sin_family = AF_INET;
-		elect_recv_addr.sin_port = htons(UDP_ELECT_M_PORT);
-		elect_recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-		if ((bind(elect_recv_sock, (struct sockaddr*) &elect_recv_addr, sizeof(elect_recv_addr)))
-				< 0)
-		{
-			critErr("main:bind elect_recv_sock:");
-		}
-
-		// waiting for the master and reseting the timeout counter and if needed answering the request
-			//TODO put this where it belongs and check if multiple DGRAMs wait to be called.
-			// Recieve msg from master,
-			int return_recv = recvfrom(elect_recv_sock, recvBuff, 1, 0,
-					(struct sockaddr*) &cli_addr, &cli_len);
 
 
 

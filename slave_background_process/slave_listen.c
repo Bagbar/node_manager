@@ -26,13 +26,15 @@ void *listen_for_master(void *args_struct)
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', BUFFERSIZE);
 
-	int recv_mast_sock;
+	int recv_mast_sock,elect_recv_sock;
 
-	struct sockaddr_in serv_addr, cli_addr;
+	struct sockaddr_in serv_addr, cli_addr,elect_recv_addr;
 
 	socklen_t cli_len = sizeof(cli_addr);
 
-	//create UDP-Socket Server
+
+
+	//create UDP-Socket receiver for control commands
 	if ((recv_mast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:socket=");
@@ -48,6 +50,30 @@ void *listen_for_master(void *args_struct)
 	{
 		critErr("listen:bind recv_mast_sock:");
 	}
+
+
+	//create UDP-Socket receiver for fetching the type_and_MAC broadcasts
+			if ((elect_recv_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+			{
+				critErr("listen:elect_recv_sock=");
+			}
+
+			//listen socket address TODO corresponding master
+			elect_recv_addr.sin_family = AF_INET;
+			elect_recv_addr.sin_port = htons(UDP_ELECT_M_PORT);
+			elect_recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+			if ((bind(elect_recv_sock, (struct sockaddr*) &elect_recv_addr, sizeof(elect_recv_addr)))
+					< 0)
+			{
+				critErr("listen:bind elect_recv_sock:");
+			}
+
+			// waiting for the master and reseting the timeout counter and if needed answering the request
+				//TODO put this where it belongs and check if multiple DGRAMs wait to be called.
+				// Recieve msg from master,
+				int return_recv = recvfrom(elect_recv_sock, recvBuff, 1, 0,
+						(struct sockaddr*) &cli_addr, &cli_len);
 
 	// waiting for the master and reseting the timeout counter and if needed answering the request
 	while (1)
@@ -95,7 +121,7 @@ void *listen_for_master(void *args_struct)
 	}
 }
 
-int elect_master()
+int elect_master(int elect_recv_sock)
 {
 	unsigned char type_and_MAC[8];
 	type_and_MAC[0] = FPGATYPE[0];
@@ -105,6 +131,8 @@ int elect_master()
 	{
 		type_and_MAC[i + 2] = mac[i];
 	}
+
+	unsigned char *typeMacArray = (unsigned char*) malloc(8*EST_NUM_BOARD);
 
 	int elect_send_sock;
 	struct sockaddr_in elect_addr;
@@ -127,5 +155,33 @@ int elect_master()
 	sendto(elect_send_sock, &type_and_MAC, sizeof(type_and_MAC), 0,
 			(struct sockaddr*) &elect_addr, elect_send_len);
 	close(elect_send_sock);
+
+
+	fd_set rfds;
+	    struct timeval tv;
+	    int retval;
+
+	   /* Watch stdin (fd 0) to see when it has input. */
+	    FD_ZERO(&rfds);
+	    FD_SET(0, &rfds);
+
+	   /* Wait up to five seconds. */
+	    tv.tv_sec = 5;
+	    tv.tv_usec = 0;
+
+	   retval = select(1, &rfds, NULL, NULL, &tv);
+	    /* Don't rely on the value of tv now! */
+
+	   if (retval == -1)
+	        perror("select()");
+	    else if (retval)
+	        printf("Data is available now.\n");
+	        /* FD_ISSET(0, &rfds) will be true. */
+	    else
+	        printf("No data within five seconds.\n");
+
+
+
+
 	return 0;
 }
