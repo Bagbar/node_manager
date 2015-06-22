@@ -15,14 +15,14 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//dont change any of these
-#define ZYNQ7000 "z7"
-#define KINTEX7  "k7"
-#define ARTIX7	 "a7"
-#define VIRTEX7  "v7"
-#define VIRTEX6  "v6"
-#define VIRTEX5  "v5"
-#define VIRTEX4  "v4"
+//define the different Boards/controllers priority
+#define ZYNQ7000 1
+#define KINTEX7  2
+#define ARTIX7	 3
+#define VIRTEX7  4
+#define VIRTEX6  5
+#define VIRTEX5  6
+#define VIRTEX4  7
 
 //this block can be changed for tweaking make sure every node has the same
 #define EST_NUM_BOARD 10 //estimated number of boards/FPGAs in the cluster used for allocation of arrays too few means more reallocs() too many allocates more unused space

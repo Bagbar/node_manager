@@ -80,9 +80,8 @@ int main()
 			// TODO check for outsourcing unlock together with else
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: over_mutex_unlock:");
-			// TODO (kami#1#): start search for new master
 
-			//wait for 0-990ms(10ms spacing)
+			//wait for 0-990ms(10ms spacing) to prevent broadcast flood
 			rnd_time.tv_nsec = ((long) (rand() % 100)) * 10000000L;
 			nanosleep(&rnd_time, NULL);
 

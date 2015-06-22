@@ -15,6 +15,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/fcntl.h>
 
 #include "basics.h"
 
