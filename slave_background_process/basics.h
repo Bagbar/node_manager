@@ -7,6 +7,7 @@
 #ifndef BASICS_H_INCLUDED
 #define BASICS_H_INCLUDED
 
+#define _GNU_SOURCE
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
@@ -14,6 +15,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 //define the different Boards/controllers priority
 #define ZYNQ7000 1
@@ -35,13 +39,6 @@
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
 
-//function to exit the program and return an error description
-void critErr(char *s);
-
-//*mac has to point to an array with at least 6 Byte
-void getMAC(uint8_t *mac);
-
-uint64_t MACtoDecimal(uint8_t *mac);
 
 // struct for storing a variable with a corresponding mutex
 struct var_mtx
@@ -55,6 +52,24 @@ struct thread_args
 	struct var_mtx *timeout_count;
 	int *am_I_master;
 };
+
+
+//function to exit the program and return an error description
+void critErr(char *s);
+
+//fills the sockaddr_in struct for Broadcasts
+void fillSockaddrBroad(struct sockaddr_in *broad_addr, uint16_t port);
+
+//fills the sockaddr_in struct for receiving from any IP
+void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port);
+
+
+//*mac has to point to an array with at least 6 Byte
+void getMAC(uint8_t *mac);
+
+uint64_t MACtoDecimal(uint8_t *mac);
+
+
 
 // BASICS_H_INCLUDED
 #endif

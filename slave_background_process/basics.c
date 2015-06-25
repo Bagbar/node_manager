@@ -11,6 +11,20 @@ void critErr(char *s)
 	perror(s);
 	exit(1);
 }
+
+void fillSockaddrBroad(struct sockaddr_in *broad_addr, uint16_t port)
+{
+	broad_addr->sin_family = AF_INET;
+	broad_addr->sin_port = htons(port);
+	broad_addr->sin_addr.s_addr = inet_addr("255.255.255.255");
+}
+
+void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port)
+{
+	any_addr->sin_family = AF_INET;
+	any_addr->sin_port = htons(port);
+	any_addr->sin_addr.s_addr = htonl(INADDR_ANY);
+}
 void getMAC(uint8_t *mac)
 {
 	char chr[18];

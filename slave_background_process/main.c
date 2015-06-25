@@ -1,3 +1,4 @@
+
 /* Zedboard Cluster management process
  *
  * all defines and options are in basics.h
@@ -14,7 +15,8 @@
 #include <time.h>
 
 #include "basics.h"
-#include "slave_listen.h"
+#include "slave.h"
+#include "master.h"
 
 uint8_t mac[6];
 
@@ -29,10 +31,9 @@ int main()
 	{ 0, 0 };
 
 	int mast_broad_sock;
+
 	struct sockaddr_in broad_addr;
 	socklen_t broad_len = sizeof(broad_addr);
-
-
 
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
@@ -46,27 +47,19 @@ int main()
 		critErr("pthread_create(listen)=");
 	}
 
-
-
-
-
-
-
-
 	//create UDP-Socket Server
 	if ((mast_broad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:send_master_socket=");
-	}
+	}fcntl(mast_broad_sock, F_SETFL, O_NONBLOCK);
 	//Broadcast socket address TODO corresponding master
-	broad_addr.sin_family = AF_INET;
-	broad_addr.sin_port = htons(UDP_NODE_LISTEN_PORT);
-	broad_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
-	if ((bind(mast_broad_sock, (struct sockaddr*) &broad_addr,
+	fillSockaddrBroad(&broad_addr,UDP_NODE_LISTEN_PORT);
+
+	/*if ((bind(mast_broad_sock, (struct sockaddr*) &broad_addr,
 			sizeof(broad_addr))) < 0)
 	{
 		critErr("main:bind mast_broad_sock:");
-	}
+	}*/
 
 	// Timeout-counter for master communication
 	while (1)
@@ -74,6 +67,11 @@ int main()
 
 		if (pthread_mutex_lock(&time_count.mtx))
 			critErr("main: mutex_lock:");
+		if (am_I_master)
+		{
+			printf("I am master and start control function mutex is locked");
+			master_control(mast_broad_sock);
+		}
 		if (time_count.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", time_count.var);

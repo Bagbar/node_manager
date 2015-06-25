@@ -5,9 +5,10 @@
  *      Author: xubuntu
  */
 
-#include "slave_listen.h"
+#include "slave.h"
 
 #define BUFFERSIZE 10
+#define TYPE_MAC_LENGTH 7
 
 //FIXME is this okay??
 extern uint8_t mac[6];
@@ -39,9 +40,7 @@ void *listen_for_master(void *args_struct)
 	}
 
 	//listen socket address TODO corresponding master
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(UDP_NODE_LISTEN_PORT);
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	fillSockaddrAny(&serv_addr,UDP_NODE_LISTEN_PORT);
 
 	if ((bind(recv_mast_sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)))
 			< 0)
@@ -56,9 +55,7 @@ void *listen_for_master(void *args_struct)
 	}
 
 	//listen socket address TODO corresponding master
-	elect_recv_addr.sin_family = AF_INET;
-	elect_recv_addr.sin_port = htons(UDP_ELECT_M_PORT);
-	elect_recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	fillSockaddrAny(&elect_recv_addr,UDP_ELECT_M_PORT);
 
 	if ((bind(elect_recv_sock, (struct sockaddr*) &elect_recv_addr,
 			sizeof(elect_recv_addr))) < 0)
@@ -75,7 +72,7 @@ void *listen_for_master(void *args_struct)
 	while (1)
 	{
 		// Recieve msg from master,
-		int return_recv = recvfrom(recv_mast_sock, recvBuff, 1, 0,
+		int return_recv = recvfrom(recv_mast_sock, &recvBuff[0], 1, 0,
 				(struct sockaddr*) &cli_addr, &cli_len);
 		// TODO (kami#9#): remove printf
 		//printf("return_recv=%d\t recvBuff[0]=%c\n", return_recv, recvBuff[0]);
@@ -119,7 +116,7 @@ void *listen_for_master(void *args_struct)
 
 int elect_master(int elect_recv_sock)
 {
-	unsigned char type_and_MAC[7];
+	unsigned char type_and_MAC[TYPE_MAC_LENGTH];
 	type_and_MAC[0] = FPGATYPE;
 	int i;
 	for (i = 0; i < 6; i++)
@@ -127,36 +124,35 @@ int elect_master(int elect_recv_sock)
 		type_and_MAC[i + 1] = mac[i];
 	}
 
-	unsigned char typeMAC_other;
-	//unsigned char *typeMacArray = (unsigned char*) malloc(8 * EST_NUM_BOARD);
+	unsigned char typeMAC_other[TYPE_MAC_LENGTH];
+
 
 	int elect_send_sock;
-	struct sockaddr_in elect_addr, cli_addr;
-	socklen_t cli_len, elect_send_len = sizeof(elect_addr);
+	struct sockaddr_in elect_addr;
+	socklen_t elect_send_len = sizeof(elect_addr);
 //create UDP-Socket Server
 	if ((elect_send_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:send_master_socket=");
 	}
 	//Broadcast socket address TODO corresponding master
-	elect_addr.sin_family = AF_INET;
-	elect_addr.sin_port = htons(UDP_ELECT_M_PORT);
-	elect_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
+	fillSockaddrBroad(&elect_addr,UDP_ELECT_M_PORT);
+
 	if ((bind(elect_send_sock, (struct sockaddr*) &elect_addr,
 			sizeof(elect_addr))) < 0)
 	{
 		critErr("main:bind elect_sock:");
 	}
 
-	sendto(elect_send_sock, &type_and_MAC, sizeof(type_and_MAC), 0,
+	sendto(elect_send_sock, &type_and_MAC[0], sizeof(type_and_MAC), 0,
 			(struct sockaddr*) &elect_addr, elect_send_len);
 	close(elect_send_sock);
 
-	int i, return_recv, biggest = 1, timeout = 3;
+	int return_recv, biggest = 1, timeout = 3;
 	while (biggest == 1 && timeout > 0)
 	{
 		// Receive msg from other boards TODO (kami#1#) check timeout
-		return_recv = recvfrom(elect_recv_sock, typeMAC_other,
+		return_recv = recvfrom(elect_recv_sock, &typeMAC_other[0],
 				sizeof(type_and_MAC), 0, NULL, NULL);
 		if (return_recv != sizeof(type_and_MAC))
 		{
@@ -169,8 +165,7 @@ int elect_master(int elect_recv_sock)
 						sleep(1);
 				}
 				else
-					criterr("elect:read broadcast socket: timeout:%d:",
-							timeout);
+					critErr("elect:read broadcast socket:");
 			}
 			else
 			{
@@ -180,7 +175,7 @@ int elect_master(int elect_recv_sock)
 		}
 
 		i = 0;
-		while (biggest == 1 && i < 7)
+		while (biggest == 1 && i < TYPE_MAC_LENGTH)
 		{
 			if (typeMAC_other[i] > type_and_MAC[i])
 				biggest = 0;
@@ -189,11 +184,12 @@ int elect_master(int elect_recv_sock)
 		}
 		//flush the socket
 		while(return_recv>=0){
-		return_recv = recvfrom(elect_recv_sock, typeMAC_other,
+		return_recv = recvfrom(elect_recv_sock, &typeMAC_other[0],
 						sizeof(type_and_MAC), 0, NULL, NULL);
 		printf("flush\n");}
 
 	}
+
 
 	/*
 	 Wait up to five seconds.
