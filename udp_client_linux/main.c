@@ -29,12 +29,14 @@ int main(void)
 	int return_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (return_socket < 0)
 		printf("socketerror:%s\n", strerror(errno));
+	int broadcastEnable=1;
+	int ret=setsockopt(return_socket, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 
 	struct sockaddr_in serv_addr;
 	socklen_t serv_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(50505);
-	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_addr.sin_port = htons(50506);
+	serv_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 //	if (inet_aton("127.0.0.1", &serv_addr.sin_addr) == 0)
 //	{
 //		fprintf(stderr, "inet_aton() failed\n");
@@ -50,6 +52,7 @@ int main(void)
 	for (i = 0; i < 2; i++)
 		sendBuff[i] = 'k';
 
+	i=0;
 	do
 	{
 		int return_send = (int) sendto(return_socket, sendBuff, 1, 0,
@@ -68,9 +71,11 @@ int main(void)
 			printf("recv data = %d\t recv_symb=%c\n", return_recv, recvBuff[0]);
 		printf("continue?y/n\n");
 		scanf("%c", &cont);
-		fflush(stdin);
+		i++;
+		if(cont=='n')
+			i=i+20;
 
-	} while (cont == 'y');
+	} while (i<20);
 
 	/*int return_recv = recv(return_accept,&recvBuff,10,0);
 	 if (return_recv<0) printf("recverror:%s\n",strerror(errno));

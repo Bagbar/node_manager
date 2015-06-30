@@ -16,7 +16,7 @@ extern uint8_t mac[6];
 void *listen_for_master(void *args_struct)
 ///  network I/O function for the control communication with the master
 {
-
+	printf("Hallo\n");
 	//Variable declarations
 	// TODO test this
 	struct var_mtx *timeout_counter =
@@ -32,7 +32,7 @@ void *listen_for_master(void *args_struct)
 	struct sockaddr_in serv_addr, cli_addr, elect_recv_addr;
 
 	socklen_t cli_len = sizeof(cli_addr);
-
+	printf("Hallo\n");
 	//create UDP-Socket receiver for control commands
 	if ((recv_mast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
@@ -42,12 +42,12 @@ void *listen_for_master(void *args_struct)
 	//listen socket address TODO corresponding master
 	fillSockaddrAny(&serv_addr,UDP_NODE_LISTEN_PORT);
 
-	if ((bind(recv_mast_sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)))
+	if ((bind(recv_mast_sock, (struct sockaddr*) &serv_addr, sizeof serv_addr))
 			< 0)
 	{
 		critErr("listen:bind recv_mast_sock:");
 	}
-
+	printf("Hallo\n");
 	//create UDP-Socket receiver for fetching the type_and_MAC broadcasts
 	if ((elect_recv_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
@@ -67,13 +67,15 @@ void *listen_for_master(void *args_struct)
 
 	// waiting for the master and reseting the timeout counter and if needed answering the request
 	//TODO put this where it belongs and check if multiple DGRAMs wait to be called.
-
+	printf("Hallo\n");
 	// waiting for the master and reseting the timeout counter and if needed answering the request
 	while (1)
 	{
+		printf("while:\n");
 		// Recieve msg from master,
 		int return_recv = recvfrom(recv_mast_sock, &recvBuff[0], 1, 0,
 				(struct sockaddr*) &cli_addr, &cli_len);
+		printf("check udp input = %d \n",recvBuff[0]);
 		// TODO (kami#9#): remove printf
 		//printf("return_recv=%d\t recvBuff[0]=%c\n", return_recv, recvBuff[0]);
 
@@ -97,6 +99,7 @@ void *listen_for_master(void *args_struct)
 				critErr("listen: mutex_unlock:");
 			break;
 		case 't': //timeout encountered by a node
+			printf("timeout signal received");
 			if (pthread_mutex_lock(&(timeout_counter->mtx)))
 				critErr("listen: mutex_lock:");
 			timeout_counter->var = 0;
@@ -112,6 +115,7 @@ void *listen_for_master(void *args_struct)
 			exit(2);
 		}
 	}
+	return 0;
 }
 
 int elect_master(int elect_recv_sock)

@@ -16,7 +16,7 @@ void fillSockaddrBroad(struct sockaddr_in *broad_addr, uint16_t port)
 {
 	broad_addr->sin_family = AF_INET;
 	broad_addr->sin_port = htons(port);
-	broad_addr->sin_addr.s_addr = inet_addr("255.255.255.255");
+	broad_addr->sin_addr.s_addr = htonl(INADDR_BROADCAST);
 }
 
 void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port)
@@ -25,6 +25,14 @@ void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port)
 	any_addr->sin_port = htons(port);
 	any_addr->sin_addr.s_addr = htonl(INADDR_ANY);
 }
+
+void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port)
+{
+	loop_addr->sin_family = AF_INET;
+	loop_addr->sin_port = htons(port);
+	loop_addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+}
+
 void getMAC(uint8_t *mac)
 {
 	char chr[18];

@@ -29,11 +29,19 @@ int main()
 	srand((unsigned int) MAC);
 	struct timespec rnd_time =
 	{ 0, 0 };
+	struct node_info node_list =
+	{
+			malloc(EST_NUM_BOARD*sizeof(short)),
+			malloc(EST_NUM_BOARD),
+			malloc(EST_NUM_BOARD*4),
+			EST_NUM_BOARD,
+			0
+	};
 
 	int mast_broad_sock;
 
-	struct sockaddr_in broad_addr;
-	socklen_t broad_len = sizeof(broad_addr);
+	struct sockaddr_in broad_addr,loop_addr;
+	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr ;
 
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
@@ -52,6 +60,9 @@ int main()
 	{
 		critErr("listen:send_master_socket=");
 	}fcntl(mast_broad_sock, F_SETFL, O_NONBLOCK);
+	int broadcastEnable=1;
+	int ret=setsockopt(mast_broad_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+
 	//Broadcast socket address TODO corresponding master
 	fillSockaddrBroad(&broad_addr,UDP_NODE_LISTEN_PORT);
 
@@ -94,6 +105,9 @@ int main()
 				char timeout_detected = 't';
 				sendto(mast_broad_sock, &timeout_detected, 1, 0,
 						(struct sockaddr*) &broad_addr, broad_len);
+				sendto(mast_broad_sock, &timeout_detected, 1, 0,
+										(struct sockaddr*) &loop_addr, loop_len);
+				printf("timeout signal sent\n");
 				//TODO check if sender receives his broadcast
 
 			}
@@ -106,7 +120,7 @@ int main()
 				critErr("main: under_mutex_unlock:");
 		}
 		// TODO (kami#9#): may use PING_PERIOD here
-		sleep(2);
+		sleep(1);
 	}
 
 	return 0;
