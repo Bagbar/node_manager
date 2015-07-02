@@ -11,7 +11,7 @@ void master_control(int mast_broad_sock)
 {
 	while (1)
 	{
-		printf("I am master");
+		printf("I am master\n");
 		sleep(1);
 	}
 
@@ -19,7 +19,7 @@ void master_control(int mast_broad_sock)
 
 void mstr_ctrl(int mast_broad_sock)
 {
-	void* new_ip_ptr, new_type_ptr;
+	void *new_ip_ptr, *new_type_ptr;
 	int size_i;
 	struct node_info node_info_str;
 	node_info_str.ip_ptr = (uint32_t*) malloc(
@@ -30,7 +30,7 @@ void mstr_ctrl(int mast_broad_sock)
 	{
 		free(node_info_str.ip_ptr);
 		free(node_info_str.type_ptr);
-		printf("couldn't malloc ip or type list")
+		printf("couldn't malloc ip or type list");
 		exit(5);
 	}
 	node_info_str.num_nodes_i = 0;
@@ -78,7 +78,7 @@ void mstr_ctrl(int mast_broad_sock)
 		else
 		{
 			if (node_info_str.num_nodes_i >= node_info_str.size_i)
-				size_i = node_info_str.size_i + REALLOC_STEPSIZE;
+			{	size_i = node_info_str.size_i + REALLOC_STEPSIZE;
 			new_ip_ptr = realloc(node_info_str.ip_ptr,
 					size_i * sizeof *node_info_str.ip_ptr);
 			new_type_ptr = realloc(node_info_str.type_ptr,
@@ -98,7 +98,8 @@ void mstr_ctrl(int mast_broad_sock)
 				printf("couldn't realloc ip or type list");
 				exit(5);
 			}
-			node_info_str.ip_ptr[node_info_str.num_nodes_i]=ntohl(response_addr.sin_addr);
+			}
+			node_info_str.ip_ptr[node_info_str.num_nodes_i]=ntohl(response_addr.sin_addr.s_addr);
 			node_info_str.type_ptr[node_info_str.num_nodes_i]=board_type_uc;
 			node_info_str.num_nodes_i++;
 

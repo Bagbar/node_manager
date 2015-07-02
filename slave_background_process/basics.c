@@ -47,7 +47,7 @@ void getMAC(uint8_t *mac)
 // TODO check if this works on zedboard/linaro
 	FILE *pFile;
 	if ((pFile = fopen("/sys/class/net/eth0/address", "r")) == NULL)
-		critErr("getRandomSeedFromMAC: fopen:");
+		critErr("getMAC: fopen:");
 	fscanf(pFile, "%s", chr);
 	fclose(pFile);
 	//	printf("%s\n", chr);

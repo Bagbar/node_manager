@@ -29,14 +29,14 @@ int main()
 	srand((unsigned int) MAC);
 	struct timespec rnd_time =
 	{ 0, 0 };
-	struct node_info node_list =
-	{
-			malloc(EST_NUM_BOARD*sizeof(short)),
-			malloc(EST_NUM_BOARD),
-			malloc(EST_NUM_BOARD*4),
-			EST_NUM_BOARD,
-			0
-	};
+//	struct node_info node_list =
+//	{
+//			malloc(EST_NUM_BOARD*sizeof(short)),
+//			malloc(EST_NUM_BOARD),
+//			malloc(EST_NUM_BOARD*4),
+//			EST_NUM_BOARD,
+//			0
+//	};
 
 	int mast_broad_sock;
 
@@ -65,6 +65,7 @@ int main()
 
 	//Broadcast socket address TODO corresponding master
 	fillSockaddrBroad(&broad_addr,UDP_NODE_LISTEN_PORT);
+	fillSockaddrLoop(&loop_addr,UDP_NODE_LISTEN_PORT);
 
 	/*if ((bind(mast_broad_sock, (struct sockaddr*) &broad_addr,
 			sizeof(broad_addr))) < 0)
@@ -78,9 +79,10 @@ int main()
 
 		if (pthread_mutex_lock(&time_count.mtx))
 			critErr("main: mutex_lock:");
+		printf("<");
 		if (am_I_master)
 		{
-			printf("I am master and start control function mutex is locked");
+			printf("I am master and start control function mutex is locked\n");
 			master_control(mast_broad_sock);
 		}
 		if (time_count.var > PING_PERIOD * TIMEOUT_PERIODS)
@@ -89,6 +91,7 @@ int main()
 			// TODO check for outsourcing unlock together with else
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: over_mutex_unlock:");
+			printf(">\n");
 
 			//wait for 0-990ms(10ms spacing) to prevent broadcast flood
 			rnd_time.tv_nsec = ((long) (rand() % 100)) * 10000000L;
@@ -97,20 +100,29 @@ int main()
 			//still no master?
 			if (pthread_mutex_lock(&time_count.mtx))
 				critErr("main:no_master mutex_lock:");
+			printf("<");
 			if (time_count.var != 0) //TODO has this to be volatile? and this expression should suffice
 			{
 				if (pthread_mutex_unlock(&time_count.mtx))
 					critErr("main:no_master mutex_unlock:");
+				printf(">");
 
 				char timeout_detected = 't';
 				sendto(mast_broad_sock, &timeout_detected, 1, 0,
 						(struct sockaddr*) &broad_addr, broad_len);
-				sendto(mast_broad_sock, &timeout_detected, 1, 0,
-										(struct sockaddr*) &loop_addr, loop_len);
+				//sendto(mast_broad_sock, &timeout_detected, 1, 0,
+				//						(struct sockaddr*) &loop_addr, loop_len);
 				printf("timeout signal sent\n");
 				//TODO check if sender receives his broadcast
 
 			}
+			else
+			{if (pthread_mutex_unlock(&time_count.mtx))
+				critErr("main:no_master mutex_unlock:");
+			printf(">\n");
+			}
+
+
 
 		}
 		else
@@ -118,6 +130,7 @@ int main()
 			printf("main:increase time_count to:%d\n", ++time_count.var);
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: under_mutex_unlock:");
+			printf(">\n");
 		}
 		// TODO (kami#9#): may use PING_PERIOD here
 		sleep(1);
