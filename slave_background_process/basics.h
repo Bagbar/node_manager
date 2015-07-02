@@ -51,18 +51,18 @@ struct thread_args
 	int *am_I_master;
 };
 
-//struct node_data
-//{	uint32_t ip;
-//	unsigned char type;
-//
-//};
+struct node_data
+{	uint32_t ip_u32;
+	uint8_t type_u8;
+
+};
 
 struct node_info
 {
-	uint32_t *ip_ptr;
-	uint8_t *type_ptr;
+//	uint32_t *ip_ptr;
+//	uint8_t *type_ptr;
 	//uint16_t *connection_values_ptr;
-	//struct node_data *node_list;
+	struct node_data *node_data_list_ptr;
 	int size_i;
 	int num_nodes_i;
 };

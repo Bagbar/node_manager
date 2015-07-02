@@ -22,6 +22,10 @@ uint8_t mac[6];
 
 int main()
 {
+	struct node_info node_info_str;
+	printf("size=%d\n",sizeof(struct node_data));
+	printf("size=%d\n",sizeof *node_info_str.node_list_ptr);
+	return 0;
 
 	getMAC(mac);
 	int am_I_master = 0; // 0=no, 1=yes
@@ -79,7 +83,7 @@ int main()
 
 		if (pthread_mutex_lock(&time_count.mtx))
 			critErr("main: mutex_lock:");
-		printf("<");
+		//printf("<");
 		if (am_I_master)
 		{
 			printf("I am master and start control function mutex is locked\n");
@@ -91,7 +95,7 @@ int main()
 			// TODO check for outsourcing unlock together with else
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: over_mutex_unlock:");
-			printf(">\n");
+			//printf(">\n");
 
 			//wait for 0-990ms(10ms spacing) to prevent broadcast flood
 			rnd_time.tv_nsec = ((long) (rand() % 100)) * 10000000L;
@@ -100,12 +104,12 @@ int main()
 			//still no master?
 			if (pthread_mutex_lock(&time_count.mtx))
 				critErr("main:no_master mutex_lock:");
-			printf("<");
+			//printf("<");
 			if (time_count.var != 0) //TODO has this to be volatile? and this expression should suffice
 			{
 				if (pthread_mutex_unlock(&time_count.mtx))
 					critErr("main:no_master mutex_unlock:");
-				printf(">");
+				//printf(">");
 
 				char timeout_detected = 't';
 				sendto(mast_broad_sock, &timeout_detected, 1, 0,
@@ -119,7 +123,7 @@ int main()
 			else
 			{if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main:no_master mutex_unlock:");
-			printf(">\n");
+			//printf(">\n");
 			}
 
 
@@ -130,7 +134,7 @@ int main()
 			printf("main:increase time_count to:%d\n", ++time_count.var);
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: under_mutex_unlock:");
-			printf(">\n");
+			//printf(">\n");
 		}
 		// TODO (kami#9#): may use PING_PERIOD here
 		sleep(1);
