@@ -66,3 +66,14 @@ uint64_t MACtoDecimal(uint8_t *mac)
 			+ (((uint64_t) mac[1]) << 32) + (((uint64_t) mac[0]) << 40);
 }
 
+
+
+int compareNodes (const void * a, const void * b)
+{
+  if ( (*(struct node_data*)a).ip_u32 <  (*(struct node_data*)b).ip_u32 ) return -1;
+  if ( (*(struct node_data*)a).ip_u32 == (*(struct node_data*)b).ip_u32 ) return 0;
+  if ( (*(struct node_data*)a).ip_u32 >  (*(struct node_data*)b).ip_u32 ) return 1;
+
+  //alternativly
+  //return ( (*(struct node_data*)a).ip_u32 - (*(struct node_data*)b).ip_u32 );
+}

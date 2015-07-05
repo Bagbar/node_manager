@@ -82,7 +82,7 @@ void *listen_for_master(void *args_struct)
 		/* case o : ///identify other: measure the connection to everyone and send to caller
 
 		 break;*/
-		case 's': ///identify self : send your Type to caller
+		case 'i': ///identify self : send your Type to caller
 			printf("send:%d",
 					(int) sendto(recv_mast_sock, &board_type, 1, 0,
 							(struct sockaddr*) &cli_addr, cli_len));

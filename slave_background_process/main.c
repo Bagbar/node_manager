@@ -1,4 +1,3 @@
-
 /* Zedboard Cluster management process
  *
  * all defines and options are in basics.h
@@ -22,10 +21,6 @@ uint8_t mac[6];
 
 int main()
 {
-	struct node_info node_info_str;
-	printf("size=%d\n",sizeof(struct node_data));
-	printf("size=%d\n",sizeof *node_info_str.node_list_ptr);
-	return 0;
 
 	getMAC(mac);
 	int am_I_master = 0; // 0=no, 1=yes
@@ -44,8 +39,8 @@ int main()
 
 	int mast_broad_sock;
 
-	struct sockaddr_in broad_addr,loop_addr;
-	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr ;
+	struct sockaddr_in broad_addr, loop_addr;
+	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
 
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
@@ -63,19 +58,21 @@ int main()
 	if ((mast_broad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:send_master_socket=");
-	}fcntl(mast_broad_sock, F_SETFL, O_NONBLOCK);
-	int broadcastEnable=1;
-	int ret=setsockopt(mast_broad_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+	}
+	fcntl(mast_broad_sock, F_SETFL, O_NONBLOCK);
+	int broadcastEnable = 1;
+	int ret = setsockopt(mast_broad_sock, SOL_SOCKET, SO_BROADCAST,
+			&broadcastEnable, sizeof(broadcastEnable));
 
 	//Broadcast socket address TODO corresponding master
-	fillSockaddrBroad(&broad_addr,UDP_NODE_LISTEN_PORT);
-	fillSockaddrLoop(&loop_addr,UDP_NODE_LISTEN_PORT);
+	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
+	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 
 	/*if ((bind(mast_broad_sock, (struct sockaddr*) &broad_addr,
-			sizeof(broad_addr))) < 0)
-	{
-		critErr("main:bind mast_broad_sock:");
-	}*/
+	 sizeof(broad_addr))) < 0)
+	 {
+	 critErr("main:bind mast_broad_sock:");
+	 }*/
 
 	// Timeout-counter for master communication
 	while (1)
@@ -88,6 +85,7 @@ int main()
 		{
 			printf("I am master and start control function mutex is locked\n");
 			master_control(mast_broad_sock);
+			am_I_master=0;
 		}
 		if (time_count.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
@@ -121,12 +119,11 @@ int main()
 
 			}
 			else
-			{if (pthread_mutex_unlock(&time_count.mtx))
-				critErr("main:no_master mutex_unlock:");
-			//printf(">\n");
+			{
+				if (pthread_mutex_unlock(&time_count.mtx))
+					critErr("main:no_master mutex_unlock:");
+				//printf(">\n");
 			}
-
-
 
 		}
 		else

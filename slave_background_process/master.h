@@ -19,7 +19,11 @@
 
 #include "basics.h"
 
+
+
 void master_control(int mast_broad_sock);
+
+void update_cluster_info(struct cluster_info cluster_info_str, int receive_sock, struct sockaddr_in *response_addr);
 
 
 #endif /* MASTER_H_ */

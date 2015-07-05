@@ -34,6 +34,8 @@
 #define UDP_N2M_PORT 12346 //slave to master
 #define UDP_ELECT_M_PORT 12347
 #define REALLOC_STEPSIZE 1
+#define PINGS_PER_IDENTIFY 6//used in master_control
+#define TIMEOUT 3 //how many a non-block receive returns with nothing
 
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
@@ -57,7 +59,7 @@ struct node_data
 
 };
 
-struct node_info
+struct cluster_info
 {
 //	uint32_t *ip_ptr;
 //	uint8_t *type_ptr;
@@ -82,6 +84,8 @@ void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port);
 void getMAC(uint8_t *mac);
 
 uint64_t MACtoDecimal(uint8_t *mac);
+
+int compareNodes (const void * a, const void * b);
 
 // BASICS_H_INCLUDED
 #endif
