@@ -44,7 +44,6 @@ void getMAC(uint8_t *mac)
 //		chr[i * 3 + 2] = ':';
 //	printf("%s\n", chr);
 
-// TODO check if this works on zedboard/linaro
 	FILE *pFile;
 	if ((pFile = fopen("/sys/class/net/eth0/address", "r")) == NULL)
 		critErr("getMAC: fopen:");

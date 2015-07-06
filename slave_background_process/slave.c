@@ -17,7 +17,6 @@ void *listen_for_master(void *args_struct)
 ///  network I/O function for the control communication with the master
 {
 	//Variable declarations
-	// TODO test this
 	struct var_mtx *timeout_counter =
 			((struct thread_args*) args_struct)->timeout_count;
 	int *am_I_master = ((struct thread_args*) args_struct)->am_I_master;
@@ -37,7 +36,7 @@ void *listen_for_master(void *args_struct)
 		critErr("listen:socket=");
 	}
 
-	//listen socket address TODO corresponding master
+	//listen socket address
 	fillSockaddrAny(&serv_addr, UDP_NODE_LISTEN_PORT);
 
 	if ((bind(recv_mast_sock, (struct sockaddr*) &serv_addr, sizeof serv_addr))
@@ -51,7 +50,7 @@ void *listen_for_master(void *args_struct)
 		critErr("listen:elect_recv_sock=");
 	}
 
-	//listen socket address TODO corresponding master
+	//listen socket address
 	fillSockaddrAny(&elect_recv_addr, UDP_ELECT_M_PORT);
 
 	if ((bind(elect_recv_sock, (struct sockaddr*) &elect_recv_addr,
@@ -62,8 +61,7 @@ void *listen_for_master(void *args_struct)
 
 	fcntl(elect_recv_sock, F_SETFL, O_NONBLOCK);
 
-	// waiting for the master and reseting the timeout counter and if needed answering the request
-	//TODO put this where it belongs and check if multiple DGRAMs wait to be called.
+
 	// waiting for the master and reseting the timeout counter and if needed answering the request
 	while (1)
 	{
@@ -72,16 +70,10 @@ void *listen_for_master(void *args_struct)
 		int return_recv = recvfrom(recv_mast_sock, &recvBuff[0], 1, 0,
 				(struct sockaddr*) &cli_addr, &cli_len);
 		printf("listen: received : %c \n", recvBuff[0]);
-		// TODO (kami#9#): remove printf
-		//printf("return_recv=%d\t recvBuff[0]=%c\n", return_recv, recvBuff[0]);
 
 		// TODO (kami#5#): check if cases are all what is needed
 		switch (recvBuff[0])
 		{
-		// TODO (kami#6#): implement case o
-		/* case o : ///identify other: measure the connection to everyone and send to caller
-
-		 break;*/
 		case 'i': ///identify self : send your Type to caller
 			printf("send:%d",
 					(int) sendto(recv_mast_sock, &board_type, 1, 0,
@@ -111,7 +103,6 @@ void *listen_for_master(void *args_struct)
 			break;
 		default:
 			printf("listen: Unknown symbol: recvBuff[0]=%c", recvBuff[0]);
-			/// TODO (kami#9#): no exit?
 			close(recv_mast_sock);
 			exit(2);
 		}
@@ -140,7 +131,7 @@ int elect_master(int elect_recv_sock)
 	{
 		critErr("listen:send_master_socket=");
 	}
-	//Broadcast socket address TODO corresponding master
+	//Broadcast socket address
 	fillSockaddrBroad(&elect_addr, UDP_ELECT_M_PORT);
 	int broadcastEnable=1;
 	int ret=setsockopt(elect_send_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
@@ -159,7 +150,7 @@ int elect_master(int elect_recv_sock)
 	int return_recv, best = 1, timeout = 3;
 	while (best == 1 && timeout > 0)
 	{
-		// Receive msg from other boards TODO (kami#1#) check timeout
+		// Receive msg from other boards
 		return_recv = recvfrom(elect_recv_sock, &typeMAC_other[0],
 				sizeof(typeMAC_self), 0, NULL, NULL);
 

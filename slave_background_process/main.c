@@ -64,7 +64,7 @@ int main()
 	int ret = setsockopt(mast_broad_sock, SOL_SOCKET, SO_BROADCAST,
 			&broadcastEnable, sizeof(broadcastEnable));
 
-	//Broadcast socket address TODO corresponding master
+
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 
@@ -90,7 +90,6 @@ int main()
 		if (time_count.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", time_count.var);
-			// TODO check for outsourcing unlock together with else
 			if (pthread_mutex_unlock(&time_count.mtx))
 				critErr("main: over_mutex_unlock:");
 			//printf(">\n");
@@ -115,7 +114,6 @@ int main()
 				//sendto(mast_broad_sock, &timeout_detected, 1, 0,
 				//						(struct sockaddr*) &loop_addr, loop_len);
 				printf("timeout signal sent\n");
-				//TODO check if sender receives his broadcast
 
 			}
 			else

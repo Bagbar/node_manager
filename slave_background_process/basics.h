@@ -56,6 +56,8 @@ struct thread_args
 struct node_data
 {	uint32_t ip_u32;
 	uint8_t type_u8;
+	uint8_t last_alive_u8;
+	uint8_t now_active_u8;
 
 };
 
@@ -67,6 +69,7 @@ struct cluster_info
 	struct node_data *node_data_list_ptr;
 	int size_i;
 	int num_nodes_i;
+	uint8_t alive_count_u8;
 };
 
 //function to exit the program and return an error description
