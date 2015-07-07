@@ -7,7 +7,6 @@
 
 #include "master.h"
 
-#define ACTIVE_COUNTER_START 1
 void master_control(int mast_broad_sock)
 {
 	while (1)
@@ -18,38 +17,105 @@ void master_control(int mast_broad_sock)
 
 }
 
-void add_node2list(struct cluster_info *cluster_info_ptr, uint32_t ip_u32,
+void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 		uint8_t boardtype_u8)
 {
 	int size_i;
-	void *new_list_ptr;
-	if (cluster_info_ptr->num_nodes_i >= cluster_info_ptr->size_i)
+	void *newList_ptr;
+	if (clusterInfo_ptr->num_nodes_i >= clusterInfo_ptr->size_i)
 	{
-		size_i = cluster_info_ptr->size_i + REALLOC_STEPSIZE;
-		new_list_ptr = realloc(cluster_info_ptr->node_data_list_ptr,
+		size_i = clusterInfo_ptr->size_i + REALLOC_STEPSIZE;
+		newList_ptr = realloc(clusterInfo_ptr->node_data_list_ptr,
 				size_i * sizeof(struct node_data));
-		if (new_list_ptr != NULL)
+		if (newList_ptr != NULL)
 		{
-			cluster_info_ptr->node_data_list_ptr = new_list_ptr;
-			cluster_info_ptr->size_i = size_i;
+			clusterInfo_ptr->node_data_list_ptr = newList_ptr;
+			clusterInfo_ptr->size_i = size_i;
 		}
 		else
 		{
-			free(cluster_info_ptr->node_data_list_ptr);
+			free(clusterInfo_ptr->node_data_list_ptr);
 			printf("couldn't realloc node_data_list");
 			exit(5);
 		}
 	}
-	cluster_info_ptr->node_data_list_ptr[cluster_info_ptr->num_nodes_i].ip_u32 =
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32 =
 			ip_u32;
-	cluster_info_ptr->node_data_list_ptr[cluster_info_ptr->num_nodes_i].type_u8 =
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].type_u8 =
 			boardtype_u8;
-	cluster_info_ptr->node_data_list_ptr->last_alive_u8 =
-			cluster_info_ptr->alive_count_u8;
+	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 =
+			clusterInfo_ptr->alive_count_u8;
 	printf("ip=%d \t type = %d added\n",
-			cluster_info_ptr->node_data_list_ptr[cluster_info_ptr->num_nodes_i].ip_u32,
+			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32,
 			boardtype_u8);
-	cluster_info_ptr->num_nodes_i++;
+	clusterInfo_ptr->num_nodes_i++;
+}
+
+void readIdentifyAnswers(int mastBroad_sock,
+		struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
+{
+	int timeout_i = TIMEOUT, returnRecv_i;
+	uint8_t boardtype_u8;
+	struct sockaddr_in response_addr;
+	socklen_t response_len;
+	struct node_data *searchReturn_ptr;
+	while (timeout_i > 0)
+	{
+		// Receive msg from other boards
+		returnRecv_i = recvfrom(mastBroad_sock, &boardtype_u8, 1, 0,
+				(struct sockaddr*) &response_addr, &response_len);
+		if (returnRecv_i != 1)
+		{
+			if (returnRecv_i == -1)
+			{
+				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same. leaving both if there should be a problem
+				{
+					timeout_i--;
+					if (timeout_i > 0)
+						sleep(1);
+				}
+				else
+					critErr("elect:read broadcast socket:");
+			}
+			else
+			{
+				printf("master_control: recvfrom wrongsize");
+				exit(4); //should be exclusive for this
+			}
+		}
+		else
+		{
+			if (newList_u8)
+			{
+				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
+						boardtype_u8);
+			}
+			else
+			{
+				searchReturn_ptr = (struct node_data*) bsearch(
+						&(response_addr.sin_addr.s_addr),
+						clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+						sizeof(struct node_data), compareNodes);
+				if (searchReturn_ptr == NULL)
+				{
+					addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
+							boardtype_u8);
+					qsort(clusterInfo_ptr->node_data_list_ptr,
+							clusterInfo_ptr->num_nodes_i, sizeof(struct node_data),
+							compareNodes);
+				}
+				else
+				{
+					searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
+				}
+			}
+		}
+
+	}
+	if (newList_u8)
+		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+				sizeof(struct node_data), compareNodes);
+
 }
 
 int mstr_ctrl(int mast_broad_sock)
@@ -60,23 +126,23 @@ int mstr_ctrl(int mast_broad_sock)
 
 	int master_i = 1, identify_counter_i = 1, return_recv_i, timeout_i = TIMEOUT;
 
-	struct cluster_info cluster_info_str;
-	cluster_info_str.node_data_list_ptr = (struct node_data*) malloc(
+	struct cluster_info clusterInfo_str;
+	clusterInfo_str.node_data_list_ptr = (struct node_data*) malloc(
 	EST_NUM_BOARD * sizeof(struct node_data));
-	cluster_info_str.alive_count_u8 = ACTIVE_COUNTER_START;
+	clusterInfo_str.alive_count_u8 = 1;
 	uint8_t boardtype_u8;
 	struct sockaddr_in broad_addr, recv_addr, response_addr;
 	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr,
 			response_len;
 
-	if (cluster_info_str.node_data_list_ptr == NULL)
+	if (clusterInfo_str.node_data_list_ptr == NULL)
 	{
-		free(cluster_info_str.node_data_list_ptr);
+		free(clusterInfo_str.node_data_list_ptr);
 		printf("couldn't malloc node_data_list");
 		exit(5);
 	}
-	cluster_info_str.num_nodes_i = 0;
-	cluster_info_str.size_i = EST_NUM_BOARD;
+	clusterInfo_str.num_nodes_i = 0;
+	clusterInfo_str.size_i = EST_NUM_BOARD;
 
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
@@ -88,40 +154,41 @@ int mstr_ctrl(int mast_broad_sock)
 
 	sendto(mast_broad_sock, &identify_node_c, 1, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
-	while (timeout_i > 0)
-	{
-		// Receive msg from other boards
-		return_recv_i = recvfrom(mast_broad_sock, &boardtype_u8, 1, 0,
-				(struct sockaddr*) &response_addr, &response_len);
-		if (return_recv_i != 1)
-		{
-			if (return_recv_i == -1)
-			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same. leaving both if there should be a problem
-				{
-					timeout_i--;
-					if (timeout_i > 0)
-						sleep(1);
-				}
-				else
-					critErr("elect:read broadcast socket:");
-			}
-			else
-			{
-				printf("master_control: recvfrom wrongsize");
-				exit(4); //should be exclusive for this
-			}
-		}
-		else
-		{
-			add_node2list(&cluster_info_str, ntohl(response_addr.sin_addr.s_addr),
-					boardtype_u8);
-		}
-
-	}
-
-	qsort(cluster_info_str.node_data_list_ptr, cluster_info_str.num_nodes_i,
-			sizeof(struct node_data), compareNodes);
+	readIdentifyAnswers(mast_broad_sock, &clusterInfo_str, 1);
+//	while (timeout_i > 0)
+//	{
+//		// Receive msg from other boards
+//		return_recv_i = recvfrom(mast_broad_sock, &boardtype_u8, 1, 0,
+//				(struct sockaddr*) &response_addr, &response_len);
+//		if (return_recv_i != 1)
+//		{
+//			if (return_recv_i == -1)
+//			{
+//				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same. leaving both if there should be a problem
+//				{
+//					timeout_i--;
+//					if (timeout_i > 0)
+//						sleep(1);
+//				}
+//				else
+//					critErr("elect:read broadcast socket:");
+//			}
+//			else
+//			{
+//				printf("master_control: recvfrom wrongsize");
+//				exit(4); //should be exclusive for this
+//			}
+//		}
+//		else
+//		{
+//			addNode2List(&clusterInfo_str, ntohl(response_addr.sin_addr.s_addr),
+//					boardtype_u8);
+//		}
+//
+//	}
+//
+//	qsort(clusterInfo_str.node_data_list_ptr, clusterInfo_str.num_nodes_i,
+//			sizeof(struct node_data), compareNodes);
 
 	do
 	{
@@ -129,7 +196,7 @@ int mstr_ctrl(int mast_broad_sock)
 		{
 			sendto(mast_broad_sock, &identify_node_c, 1, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
-			update_cluster_info(&cluster_info_str, mast_broad_sock, response_addr);
+			updateClusterInfo(&clusterInfo_str, mast_broad_sock, response_addr);
 		}
 		else
 		{
@@ -140,70 +207,69 @@ int mstr_ctrl(int mast_broad_sock)
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
 	} while (master_i);
-	free(cluster_info_str.node_data_list_ptr);
+	free(clusterInfo_str.node_data_list_ptr);
 	return 0;
 }
 
-void update_cluster_info(struct cluster_info *cluster_info_ptr,
-		int receive_sock, struct sockaddr_in response_addr)
+void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock,
+		struct sockaddr_in response_addr)
 {
-	int timeout_i = TIMEOUT, return_recv_i, i;
+	int i;
+//	int timeout_i = TIMEOUT, returnRecv_i;
+//
+//	struct node_data *searchReturn_ptr;
+//	uint8_t boardtype_u8;
+//	socklen_t response_len;
+	clusterInfo_ptr->alive_count_u8++;
 
-	struct node_data *search_return;
-	uint8_t boardtype_u8;
-	socklen_t response_len;
-	cluster_info_ptr->alive_count_u8++;
-	while (timeout_i > 0)
+readIdentifyAnswers()
+//	while (timeout_i > 0)
+//	{
+//		// Receive msg from other boards
+//		returnRecv_i = recvfrom(receive_sock, &boardtype_u8, 1, 0,
+//				(struct sockaddr*) &response_addr, &response_len);
+//		if (returnRecv_i != 1)
+//		{
+//			if (returnRecv_i == -1)
+//			{
+//				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same. leaving both if there should be a problem
+//				{
+//					timeout_i--;
+//					if (timeout_i > 0)
+//						sleep(1);
+//				}
+//				else
+//					critErr("elect:read broadcast socket:");
+//			}
+//			else
+//			{
+//				printf("master_control: recvfrom wrongsize");
+//				exit(4); //should be exclusive for this
+//			}
+//		}
+//		else
+//		{
+//			searchReturn_ptr = (struct node_data*) bsearch(
+//					&(response_addr.sin_addr.s_addr), clusterInfo_ptr->node_data_list_ptr,
+//					clusterInfo_ptr->num_nodes_i, sizeof(struct node_data), compareNodes);
+//			if (searchReturn_ptr == NULL)
+//			{
+//				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
+//						boardtype_u8);
+//				qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+//						sizeof(struct node_data), compareNodes);
+//			}
+//			else
+//			{
+//				searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
+//			}
+//		}
+//	}
+
+	for (i = 0; i < clusterInfo_ptr->num_nodes_i; i++)
 	{
-		// Receive msg from other boards
-		return_recv_i = recvfrom(receive_sock, &boardtype_u8, 1, 0,
-				(struct sockaddr*) &response_addr, &response_len);
-		if (return_recv_i != 1)
-		{
-			if (return_recv_i == -1)
-			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same. leaving both if there should be a problem
-				{
-					timeout_i--;
-					if (timeout_i > 0)
-						sleep(1);
-				}
-				else
-					critErr("elect:read broadcast socket:");
-			}
-			else
-			{
-				printf("master_control: recvfrom wrongsize");
-				exit(4); //should be exclusive for this
-			}
-		}
-		else
-		{
-			search_return = (struct node_data*) bsearch(
-					&(response_addr.sin_addr.s_addr),
-					cluster_info_ptr->node_data_list_ptr, cluster_info_ptr->num_nodes_i,
-					sizeof(struct node_data), compareNodes);
-			if (search_return == NULL)
-			{
-				add_node2list(cluster_info_ptr, ntohl(response_addr.sin_addr.s_addr),
-						boardtype_u8);
-				qsort(cluster_info_ptr->node_data_list_ptr,
-						cluster_info_ptr->num_nodes_i, sizeof(struct node_data),
-						compareNodes);
-			}
-			else
-			{
-				search_return->last_alive_u8 = cluster_info_ptr->alive_count_u8;
-			}
-
-		}
-
-	}
-
-	for (i = 0; i < cluster_info_ptr->num_nodes_i; i++)
-	{
-		if (cluster_info_ptr->node_data_list_ptr[i].last_alive_u8
-				!= cluster_info_ptr->alive_count_u8)
+		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8
+				!= clusterInfo_ptr->alive_count_u8)
 		{
 
 		}

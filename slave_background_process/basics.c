@@ -36,13 +36,6 @@ void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port)
 void getMAC(uint8_t *mac)
 {
 	char chr[18];
-	//TODO clean
-//	chr[17] = 0;//maybe obsolete
-//	memset(chr, 'f', 17);
-//	int i = 0;
-//	for (i = 0; i < 5; i++)
-//		chr[i * 3 + 2] = ':';
-//	printf("%s\n", chr);
 
 	FILE *pFile;
 	if ((pFile = fopen("/sys/class/net/eth0/address", "r")) == NULL)

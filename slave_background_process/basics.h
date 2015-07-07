@@ -50,14 +50,14 @@ struct var_mtx
 struct thread_args
 {
 	struct var_mtx *timeout_count;
-	int *am_I_master;
+	int *master_ptr;
 };
 
 struct node_data
 {	uint32_t ip_u32;
 	uint8_t type_u8;
-	uint8_t last_alive_u8;
-	uint8_t now_active_u8;
+	uint8_t lastAlive_u8;
+	uint8_t nowActive_u8;
 
 };
 

@@ -23,7 +23,7 @@ int main()
 {
 
 	getMAC(mac);
-	int am_I_master = 0; // 0=no, 1=yes
+	int master_i = 0; // 0=no, 1=yes
 	uint64_t MAC = MACtoDecimal(mac);
 	srand((unsigned int) MAC);
 	struct timespec rnd_time =
@@ -37,7 +37,7 @@ int main()
 //			0
 //	};
 
-	int mast_broad_sock;
+	int mastBroad_sock;
 
 	struct sockaddr_in broad_addr, loop_addr;
 	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
@@ -45,7 +45,7 @@ int main()
 	struct var_mtx time_count =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
 	struct thread_args bg_listen_args =
-	{ &time_count, &am_I_master };
+	{ &time_count, &master_i };
 
 	pthread_t background_listen;
 	if (pthread_create(&background_listen, NULL, listen_for_master,
@@ -55,13 +55,13 @@ int main()
 	}
 
 	//create UDP-Socket Server
-	if ((mast_broad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	if ((mastBroad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		critErr("listen:send_master_socket=");
 	}
-	fcntl(mast_broad_sock, F_SETFL, O_NONBLOCK);
+	fcntl(mastBroad_sock, F_SETFL, O_NONBLOCK);
 	int broadcastEnable = 1;
-	int ret = setsockopt(mast_broad_sock, SOL_SOCKET, SO_BROADCAST,
+	int ret = setsockopt(mastBroad_sock, SOL_SOCKET, SO_BROADCAST,
 			&broadcastEnable, sizeof(broadcastEnable));
 
 
@@ -81,11 +81,11 @@ int main()
 		if (pthread_mutex_lock(&time_count.mtx))
 			critErr("main: mutex_lock:");
 		//printf("<");
-		if (am_I_master)
+		if (master_i)
 		{
 			printf("I am master and start control function mutex is locked\n");
-			master_control(mast_broad_sock);
-			am_I_master=0;
+			master_control(mastBroad_sock);
+			master_i=0;
 		}
 		if (time_count.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
@@ -109,7 +109,7 @@ int main()
 				//printf(">");
 
 				char timeout_detected = 't';
-				sendto(mast_broad_sock, &timeout_detected, 1, 0,
+				sendto(mastBroad_sock, &timeout_detected, 1, 0,
 						(struct sockaddr*) &broad_addr, broad_len);
 				//sendto(mast_broad_sock, &timeout_detected, 1, 0,
 				//						(struct sockaddr*) &loop_addr, loop_len);
