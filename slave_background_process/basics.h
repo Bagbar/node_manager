@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 
 //define the different Boards/controllers priority
+#define SERVER   0
 #define ZYNQ7000 1
 #define KINTEX7  2
 #define ARTIX7	 3
@@ -30,15 +31,23 @@
 #define EST_NUM_BOARD 10 //estimated number of boards/FPGAs in the cluster used for allocation of arrays too few means more reallocs() too many allocates more unused space
 #define PING_PERIOD 2 ///in sec
 #define TIMEOUT_PERIODS 5
-#define UDP_NODE_LISTEN_PORT 12345 //used for general commands to Nodes
-#define UDP_N2M_PORT 12346 //slave to master
-#define UDP_ELECT_M_PORT 12347
-#define REALLOC_STEPSIZE 1
-#define PINGS_PER_IDENTIFY 6//used in master_control
-#define TIMEOUT 3 //how many a non-block receive returns with nothing
+#define REALLOC_STEPSIZE 3
+#define PINGS_PER_IDENTIFY 6//used in master_control defines how long the intervals between network updates are
+#define TIMEOUT 3 //how often a non-block-receive returns with nothing
+
+
+
+//Port defines
+#define UDP_NODE_LISTEN_PORT 50001 //used for general commands to Nodes
+#define UDP_N2M_PORT 50004 //slave to master
+#define UDP_ELECT_M_PORT 50003
+#define TCP_RECV_PROGRAMMING_PORT 50011 //used for sending programs and administrative data to slaves
+#define TCP_RECV_DATA_PORT 50012 //receive the data that has to be processed
 
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
+//everyone with the same number shall be in the same subgroup (not active)
+#define CLUSTERGROUP 0
 
 // struct for storing a variable with a corresponding mutex
 struct var_mtx
@@ -47,18 +56,21 @@ struct var_mtx
 	pthread_mutex_t mtx;
 };
 
-struct thread_args
+//struct for thread creating arguments master_ptr is also used with the mutex
+struct slave_args
 {
 	struct var_mtx *timeout_count;
 	int *master_ptr;
+	uint8_t *subgroup_ptr;
 };
 
 struct node_data
-{	uint32_t ip_u32;
+{
+	uint32_t ip_u32;
 	uint8_t type_u8;
 	uint8_t lastAlive_u8;
 	uint8_t nowActive_u8;
-
+	uint8_t group_u8;
 };
 
 struct cluster_info
@@ -88,7 +100,7 @@ void getMAC(uint8_t *mac);
 
 uint64_t MACtoDecimal(uint8_t *mac);
 
-int compareNodes (const void * a, const void * b);
+int compareNodes(const void * a, const void * b);
 
 // BASICS_H_INCLUDED
 #endif

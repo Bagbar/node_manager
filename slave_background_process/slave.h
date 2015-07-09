@@ -17,10 +17,10 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 
-
 #include "basics.h"
 
 void *listen_for_master(void *args_struct);
 int elect_master();
+void recvMasterControlMsg(struct slave_args *slaveArgs_ptr,int recvMast_sock,int electRecv_sock);
 
 #endif /* SLAVE_H_ */

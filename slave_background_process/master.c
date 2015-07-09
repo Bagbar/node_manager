@@ -7,18 +7,9 @@
 
 #include "master.h"
 
-void master_control(int mast_broad_sock)
-{
-	while (1)
-	{
-		printf("I am master\n");
-		sleep(1);
-	}
-
-}
 
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
-		uint8_t boardtype_u8)
+		const uint8_t *typeAndGroup)
 {
 	int size_i;
 	void *newList_ptr;
@@ -42,27 +33,30 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32 =
 			ip_u32;
 	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].type_u8 =
-			boardtype_u8;
+			typeAndGroup[0];
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].group_u8 =
+				typeAndGroup[1];
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 =
 			clusterInfo_ptr->alive_count_u8;
-	printf("ip=%d \t type = %d added\n",
+	clusterInfo_ptr->node_data_list_ptr->nowActive_u8=0;
+	printf("ip=%u \t type = %d added\n",
 			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32,
-			boardtype_u8);
+			typeAndGroup);
 	clusterInfo_ptr->num_nodes_i++;
 }
 
-void readIdentifyAnswers(int mastBroad_sock,
-		struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
+void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
+		uint8_t newList_u8)
 {
 	int timeout_i = TIMEOUT, returnRecv_i;
-	uint8_t boardtype_u8;
+	uint8_t typeAndGroup[2];
 	struct sockaddr_in response_addr;
 	socklen_t response_len;
 	struct node_data *searchReturn_ptr;
 	while (timeout_i > 0)
 	{
 		// Receive msg from other boards
-		returnRecv_i = recvfrom(mastBroad_sock, &boardtype_u8, 1, 0,
+		returnRecv_i = recvfrom(receive_sock, &typeAndGroup, sizeof typeAndGroup , 0,
 				(struct sockaddr*) &response_addr, &response_len);
 		if (returnRecv_i != 1)
 		{
@@ -88,7 +82,7 @@ void readIdentifyAnswers(int mastBroad_sock,
 			if (newList_u8)
 			{
 				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
-						boardtype_u8);
+						&typeAndGroup);
 			}
 			else
 			{
@@ -99,7 +93,7 @@ void readIdentifyAnswers(int mastBroad_sock,
 				if (searchReturn_ptr == NULL)
 				{
 					addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
-							boardtype_u8);
+							&typeAndGroup);
 					qsort(clusterInfo_ptr->node_data_list_ptr,
 							clusterInfo_ptr->num_nodes_i, sizeof(struct node_data),
 							compareNodes);
@@ -118,43 +112,42 @@ void readIdentifyAnswers(int mastBroad_sock,
 
 }
 
-int mstr_ctrl(int mast_broad_sock)
+int master_control(int mastBroad_sock)
 {
 
 	printf("I am master\n");
 	char keep_alive_c = 'k', identify_node_c = 'i';
 
-	int master_i = 1, identify_counter_i = 1, return_recv_i, timeout_i = TIMEOUT;
+	int master_i = 1, identify_counter_i = 1;
 
-	struct cluster_info clusterInfo_str;
-	clusterInfo_str.node_data_list_ptr = (struct node_data*) malloc(
+	struct cluster_info clusterInfo_sct;
+	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
 	EST_NUM_BOARD * sizeof(struct node_data));
-	clusterInfo_str.alive_count_u8 = 1;
-	uint8_t boardtype_u8;
-	struct sockaddr_in broad_addr, recv_addr, response_addr;
-	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr,
-			response_len;
+	clusterInfo_sct.alive_count_u8 = 1;
 
-	if (clusterInfo_str.node_data_list_ptr == NULL)
+	struct sockaddr_in broad_addr, recv_addr;
+	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
+
+	if (clusterInfo_sct.node_data_list_ptr == NULL)
 	{
-		free(clusterInfo_str.node_data_list_ptr);
+		free(clusterInfo_sct.node_data_list_ptr);
 		printf("couldn't malloc node_data_list");
 		exit(5);
 	}
-	clusterInfo_str.num_nodes_i = 0;
-	clusterInfo_str.size_i = EST_NUM_BOARD;
+	clusterInfo_sct.num_nodes_i = 0;
+	clusterInfo_sct.size_i = EST_NUM_BOARD;
 
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
 
-	if ((bind(mast_broad_sock, (struct sockaddr*) &recv_addr, recv_len)) < 0)
-	{
-		critErr("master:bind mast_broad_sock:");
-	}
+//	if ((bind(mastBroad_sock, (struct sockaddr*) &recv_addr, recv_len)) < 0)
+//	{
+//		critErr("master:bind mastBroad_sock:");
+//	}
 
-	sendto(mast_broad_sock, &identify_node_c, 1, 0,
+	sendto(mastBroad_sock, &identify_node_c, 1, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
-	readIdentifyAnswers(mast_broad_sock, &clusterInfo_str, 1);
+	readIdentifyAnswers(mastBroad_sock, &clusterInfo_sct, 1);
 //	while (timeout_i > 0)
 //	{
 //		// Receive msg from other boards
@@ -194,27 +187,28 @@ int mstr_ctrl(int mast_broad_sock)
 	{
 		if (identify_counter_i == 0)
 		{
-			sendto(mast_broad_sock, &identify_node_c, 1, 0,
+			sendto(mastBroad_sock, &identify_node_c, 1, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
-			updateClusterInfo(&clusterInfo_str, mast_broad_sock, response_addr);
+			updateClusterInfo(&clusterInfo_sct, mastBroad_sock);
 		}
 		else
 		{
 
-			sendto(mast_broad_sock, &keep_alive_c, 1, 0,
+			sendto(mastBroad_sock, &keep_alive_c, 1, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
 		}
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
+		printf("identify_counter=%d\n",identify_counter_i);
 	} while (master_i);
-	free(clusterInfo_str.node_data_list_ptr);
+	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
 }
 
-void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock,
-		struct sockaddr_in response_addr)
+void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
-	int i;
+	printf("starting update\n");
+	int i, outdated_i=0;
 //	int timeout_i = TIMEOUT, returnRecv_i;
 //
 //	struct node_data *searchReturn_ptr;
@@ -222,7 +216,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock,
 //	socklen_t response_len;
 	clusterInfo_ptr->alive_count_u8++;
 
-readIdentifyAnswers()
+	readIdentifyAnswers(receive_sock, clusterInfo_ptr, 0);
 //	while (timeout_i > 0)
 //	{
 //		// Receive msg from other boards
@@ -271,8 +265,13 @@ readIdentifyAnswers()
 		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8
 				!= clusterInfo_ptr->alive_count_u8)
 		{
-
+			clusterInfo_ptr->node_data_list_ptr[i].ip_u32=-1;
+			clusterInfo_ptr->node_data_list_ptr->nowActive_u8=0;
+			outdated_i++;
 		}
 	}
+	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+					sizeof(struct node_data), compareNodes);
+	clusterInfo_ptr->num_nodes_i=clusterInfo_ptr->num_nodes_i-outdated_i;
 
 }

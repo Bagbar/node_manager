@@ -19,11 +19,16 @@
 
 #include "basics.h"
 
+int master_control(int mastBroad_sock);
 
+void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
+		const uint8_t *typeAndGroup);
 
-void master_control(int mast_broad_sock);
+void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
+		uint8_t newList_u8);
 
-void updateClusterInfo(struct cluster_info *cluster_info_str, int receive_sock, struct sockaddr_in response_addr);
+void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
+
 
 
 #endif /* MASTER_H_ */
