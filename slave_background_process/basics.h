@@ -17,6 +17,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#define MASK_8BIT 0xFF
 //define the different Boards/controllers priority
 #define SERVER   0
 #define ZYNQ7000 1
@@ -39,10 +41,14 @@
 
 //Port defines
 #define UDP_NODE_LISTEN_PORT 50001 //used for general commands to Nodes
-#define UDP_N2M_PORT 50004 //slave to master
+#define UDP_N2M_PORT 50002 //slave to master
 #define UDP_ELECT_M_PORT 50003
-#define TCP_RECV_PROGRAMMING_PORT 50011 //used for sending programs and administrative data to slaves
+#define TCP_RECV_WORK_PORT 50010 //port for the program containing the calculation
+#define TCP_RECV_INFO_PORT 50011 //used for sending  administrative data to slaves
 #define TCP_RECV_DATA_PORT 50012 //receive the data that has to be processed
+#define TCP_RECV_DRIVER_PORT 50013
+#define TCP_RECV_BITSTREAM_PORT 50014
+
 
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000

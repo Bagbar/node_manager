@@ -39,11 +39,11 @@ int main()
 	struct slave_args bg_listen_args =
 	{ &timeCount_mtx_sct, &master_i,&subgroup_u8 };
 	
-	pthread_t background_listen;
-	if (pthread_create(&background_listen, NULL, listen_for_master,
+	pthread_t slave_thread;
+	if (pthread_create(&slave_thread, NULL, slave_main,
 			(void*) &bg_listen_args))
 	{
-		critErr("pthread_create(listen)=");
+		critErr("pthread_create(slave)=");
 	}
 	
 	//create UDP-Socket Server
