@@ -17,8 +17,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+//#define MASK_8BIT 0xFF
+#define WORK_SHIFT 2
+#define BIT_SHIFT 1
+#define DRIVER_SHIFT 0
+#define CHECK_OKAY 0
+#define CHECK_FAILED 1
+#define WORK_THREAD_CANCELED 100
 
-#define MASK_8BIT 0xFF
 //define the different Boards/controllers priority
 #define SERVER   0
 #define ZYNQ7000 1
@@ -37,8 +43,6 @@
 #define PINGS_PER_IDENTIFY 6//used in master_control defines how long the intervals between network updates are
 #define TIMEOUT 3 //how often a non-block-receive returns with nothing
 
-
-
 //Port defines
 #define UDP_NODE_LISTEN_PORT 50001 //used for general commands to Nodes
 #define UDP_N2M_PORT 50002 //slave to master
@@ -49,11 +53,11 @@
 #define TCP_RECV_DRIVER_PORT 50013
 #define TCP_RECV_BITSTREAM_PORT 50014
 
-
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
 //everyone with the same number shall be in the same subgroup (not active)
 #define CLUSTERGROUP 0
+
 
 // struct for storing a variable with a corresponding mutex
 struct var_mtx

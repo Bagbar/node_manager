@@ -7,7 +7,6 @@
 
 #include "master.h"
 
-
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 		const uint8_t *typeAndGroup)
 {
@@ -35,10 +34,10 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].type_u8 =
 			typeAndGroup[0];
 	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].group_u8 =
-				typeAndGroup[1];
+			typeAndGroup[1];
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 =
 			clusterInfo_ptr->alive_count_u8;
-	clusterInfo_ptr->node_data_list_ptr->nowActive_u8=0;
+	clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
 	printf("ip=%u \t type = %d added\n",
 			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32,
 			typeAndGroup);
@@ -56,8 +55,9 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 	while (timeout_i > 0)
 	{
 		// Receive msg from other boards
-		returnRecv_i = recvfrom(receive_sock, &typeAndGroup, sizeof typeAndGroup , 0,
-				(struct sockaddr*) &response_addr, &response_len);
+		returnRecv_i = recvfrom(receive_sock, &typeAndGroup,
+				sizeof typeAndGroup, 0, (struct sockaddr*) &response_addr,
+				&response_len);
 		if (returnRecv_i != 1)
 		{
 			if (returnRecv_i == -1)
@@ -81,26 +81,29 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		{
 			if (newList_u8)
 			{
-				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
-						&typeAndGroup);
+				addNode2List(clusterInfo_ptr,
+						ntohl(response_addr.sin_addr.s_addr), &typeAndGroup);
 			}
 			else
 			{
 				searchReturn_ptr = (struct node_data*) bsearch(
 						&(response_addr.sin_addr.s_addr),
-						clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
-						sizeof(struct node_data), compareNodes);
+						clusterInfo_ptr->node_data_list_ptr,
+						clusterInfo_ptr->num_nodes_i, sizeof(struct node_data),
+						compareNodes);
 				if (searchReturn_ptr == NULL)
 				{
-					addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr),
+					addNode2List(clusterInfo_ptr,
+							ntohl(response_addr.sin_addr.s_addr),
 							&typeAndGroup);
 					qsort(clusterInfo_ptr->node_data_list_ptr,
-							clusterInfo_ptr->num_nodes_i, sizeof(struct node_data),
-							compareNodes);
+							clusterInfo_ptr->num_nodes_i,
+							sizeof(struct node_data), compareNodes);
 				}
 				else
 				{
-					searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
+					searchReturn_ptr->lastAlive_u8 =
+							clusterInfo_ptr->alive_count_u8;
 				}
 			}
 		}
@@ -199,7 +202,7 @@ int master_control(int mastBroad_sock)
 		}
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
-		printf("identify_counter=%d\n",identify_counter_i);
+		printf("identify_counter=%d\n", identify_counter_i);
 	} while (master_i);
 	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
@@ -208,7 +211,7 @@ int master_control(int mastBroad_sock)
 void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
 	printf("starting update\n");
-	int i, outdated_i=0;
+	int i, outdated_i = 0;
 //	int timeout_i = TIMEOUT, returnRecv_i;
 //
 //	struct node_data *searchReturn_ptr;
@@ -265,13 +268,55 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8
 				!= clusterInfo_ptr->alive_count_u8)
 		{
-			clusterInfo_ptr->node_data_list_ptr[i].ip_u32=-1;
-			clusterInfo_ptr->node_data_list_ptr->nowActive_u8=0;
+			clusterInfo_ptr->node_data_list_ptr[i].ip_u32 = -1;
+			clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
 			outdated_i++;
 		}
 	}
 	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
-					sizeof(struct node_data), compareNodes);
-	clusterInfo_ptr->num_nodes_i=clusterInfo_ptr->num_nodes_i-outdated_i;
+			sizeof(struct node_data), compareNodes);
+	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
+
+}
+
+void *send_info(void *send_info_args)
+{
+	uint8_t check_u8;
+	size_t sendBuff[4];
+	struct send_info *send_info_ptr;
+	//TODO 1 Parse xml file and get info about file
+	sendBuff[WORK_SHIFT] = send_info_ptr->work_size;
+	sendBuff[BIT_SHIFT] = send_info_ptr->bit_size;
+	sendBuff[DRIVER_SHIFT] = send_info_ptr->driver_size;
+	sendBuff[3] = sendBuff[WORK_SHIFT] + sendBuff[BIT_SHIFT]
+			+ sendBuff[DRIVER_SHIFT];
+
+	struct sockaddr_in dest_addr;
+	dest_addr.sin_family = AF_INET;
+	dest_addr.sin_port = htons(TCP_RECV_INFO_PORT);
+	dest_addr.sin_addr.s_addr = send_info_ptr->IP; //has to be converted already
+
+	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (return_socket < 0)
+		printf("slave: recv_info: socketerror:%s\n", strerror(errno));
+	int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr,
+			sizeof(dest_addr));
+	if (return_connect < 0)
+		critErr("master: send_info: connecterror");
+	do{
+	int return_send = send(return_socket, &sendBuff, sizeof(sendBuff), 0);
+	if (return_send < 0)
+		printf("master: send_info: senderror:%s", strerror(errno));
+
+	int return_recv = recv(return_socket, &check_u8, 1, 0);
+	if (return_recv < 0)
+		printf("recverror:%s", strerror(errno));
+
+	}while(check_u8!=CHECK_OKAY);
+	close(return_socket); //TODO cancel
+	return NULL;
+
+}
+void send_file(void *send_file_args){
 
 }

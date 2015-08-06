@@ -19,23 +19,21 @@
 
 #include "basics.h"
 
-#define WORK_SHIFT 2
-#define BIT_SHIFT 1
-#define DRIVER_SHIFT 0
-
-struct transfer_info{
-	size_t work_size,bit_size,driver_size;
-		//uint8_t status_okay;
-		pthread_mutex_t mtx;
-};
 
 void *slave_main(void *args_struct);
 int elect_master();
-void recvMasterControlMsg(struct slave_args *slaveArgs_ptr,int recvMast_sock,int electRecv_sock);
+void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
+		int electRecv_sock);
 
-struct recv_args{
+struct transfer_info
+{
+	size_t work_size, bit_size, driver_size;
+	//uint8_t status_okay;
+};
+
+struct recv_args
+{
 	size_t file_size;
-	pthread_mutex_t *mtx_ptr;
 	int filetype_i;
 };
 
