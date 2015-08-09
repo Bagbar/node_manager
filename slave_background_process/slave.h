@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 
+
 #include "basics.h"
 
 
@@ -25,20 +26,23 @@ int elect_master();
 void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
 		int electRecv_sock);
 
-struct transfer_info
+struct recv_info
 {
 	size_t work_size, bit_size, driver_size;
 	//uint8_t status_okay;
 };
 
-struct recv_args
+struct recv_file
 {
-	size_t file_size;
+	size_t recv_size;
+	size_t expected_size;
 	int filetype_i;
 };
 
 void *receive_info(void * transfer_args);
 
-void *receive_file(void * recv_args);
+void *receive_file(void * recv_file_args);
+
+void *execute_work(void *args);
 
 #endif /* SLAVE_H_ */

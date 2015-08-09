@@ -25,14 +25,16 @@ struct send_info
 	uint32_t IP; //converted format for sockaddr_in
 };
 
-struct file_args{
-
+struct send_file{
+		char filename[20];
+		int filetype_i;
+		uint32_t IP; //converted format for sockaddr_in
 };
 
 int master_control(int mastBroad_sock);
 
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
-		const uint8_t *typeAndGroup);
+		uint8_t *typeAndGroup);
 
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		uint8_t newList_u8);

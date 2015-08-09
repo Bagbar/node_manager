@@ -7,8 +7,10 @@
 
 #include "master.h"
 
+#define BUFFERSIZE 1024
+
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
-		const uint8_t *typeAndGroup)
+		 uint8_t *typeAndGroup)
 {
 	int size_i;
 	void *newList_ptr;
@@ -38,9 +40,9 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 =
 			clusterInfo_ptr->alive_count_u8;
 	clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
-	printf("ip=%u \t type = %d added\n",
+	printf("ip=%u \t type = %u added\n",
 			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32,
-			typeAndGroup);
+			typeAndGroup[0]);
 	clusterInfo_ptr->num_nodes_i++;
 }
 
@@ -82,7 +84,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 			if (newList_u8)
 			{
 				addNode2List(clusterInfo_ptr,
-						ntohl(response_addr.sin_addr.s_addr), &typeAndGroup);
+						ntohl(response_addr.sin_addr.s_addr), &typeAndGroup[0]);
 			}
 			else
 			{
@@ -95,7 +97,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 				{
 					addNode2List(clusterInfo_ptr,
 							ntohl(response_addr.sin_addr.s_addr),
-							&typeAndGroup);
+							&typeAndGroup[0]);
 					qsort(clusterInfo_ptr->node_data_list_ptr,
 							clusterInfo_ptr->num_nodes_i,
 							sizeof(struct node_data), compareNodes);
@@ -283,7 +285,7 @@ void *send_info(void *send_info_args)
 {
 	uint8_t check_u8;
 	size_t sendBuff[4];
-	struct send_info *send_info_ptr;
+	struct send_info *send_info_ptr =send_info_args;
 	//TODO 1 Parse xml file and get info about file
 	sendBuff[WORK_SHIFT] = send_info_ptr->work_size;
 	sendBuff[BIT_SHIFT] = send_info_ptr->bit_size;
@@ -317,6 +319,77 @@ void *send_info(void *send_info_args)
 	return NULL;
 
 }
-void send_file(void *send_file_args){
+void *send_file(void *send_file_args){
 
+	struct send_file *file_info_ptr = send_file_args;
+
+	uint16_t port_u16;
+	int i;
+		int return_socket = socket(AF_INET, SOCK_STREAM, 0);
+		if (return_socket < 0)
+			printf("socketerror:%s", strerror(errno));
+
+		switch (file_info_ptr->filetype_i)
+			{
+			case WORK_SHIFT:
+				port_u16 = TCP_RECV_WORK_PORT;
+				break;
+			case BIT_SHIFT:
+				port_u16 = TCP_RECV_BITSTREAM_PORT;
+				break;
+			case DRIVER_SHIFT:
+				port_u16 = TCP_RECV_DRIVER_PORT;
+				break;
+			default:
+				critErr("slave recv_file= filetype unknown");
+			}
+
+
+		char sendBuff[BUFFERSIZE];
+		memset(sendBuff, '0', sizeof(sendBuff));
+
+		struct sockaddr_in dest_addr;
+		dest_addr.sin_family = AF_INET;
+		dest_addr.sin_port = htons(port_u16);
+		dest_addr.sin_addr.s_addr = file_info_ptr->IP;
+
+		int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr,
+				sizeof(dest_addr));
+
+		if (return_connect < 0)
+			printf("connecterror:%s", strerror(errno));
+
+		FILE * pFile;
+
+		size_t result;
+
+		pFile = fopen(&(file_info_ptr->filename[0]), "rb");
+		if (pFile == NULL)
+		{
+			fputs("File error", stderr);
+			exit(1);
+		}
+
+		int return_send;
+		do{
+		// copy the file into the buffer:
+		result = fread(sendBuff, 1, BUFFERSIZE, pFile);
+		if (result != BUFFERSIZE && feof(pFile)==0)
+		{
+			critErr("master:send_file:Reading error");
+		}
+		return_send = send(return_socket, sendBuff, result, 0);
+			if (return_send < 0)
+				printf("master: send_file: senderror:%s", strerror(errno));
+			//TODO catch
+			else
+				printf("send data = %d\n", return_send);
+		}while(feof(pFile)==0);
+		// terminate
+		fclose(pFile);
+		printf("master:send_file:file_sent:%s",file_info_ptr->filename);
+
+		if (close(return_socket) < 0)
+			printf("closeerror:%s", strerror(errno));
+		return NULL;
 }
