@@ -25,10 +25,11 @@ struct send_info
 	uint32_t IP; //converted format for sockaddr_in
 };
 
-struct send_file{
-		char filename[20];
-		int filetype_i;
-		uint32_t IP; //converted format for sockaddr_in
+struct send_file
+{
+	char filename[20];
+	int filetype_i;
+	uint32_t IP; //converted format for sockaddr_in
 };
 
 int master_control(int mastBroad_sock);

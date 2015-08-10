@@ -58,7 +58,6 @@
 //everyone with the same number shall be in the same subgroup (not active)
 #define CLUSTERGROUP 0
 
-
 // struct for storing a variable with a corresponding mutex
 struct var_mtx
 {
