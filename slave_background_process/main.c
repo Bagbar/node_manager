@@ -21,6 +21,8 @@ uint8_t mac[6];
 
 int main()
 {
+	XMLtest("fuuuu");
+	return 0;
 	getMAC(mac);
 	int master_i = 0; // 0=no, 1=yes
 	uint8_t subgroup_u8 = CLUSTERGROUP;

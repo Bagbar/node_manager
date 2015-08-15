@@ -283,15 +283,11 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 
 void *send_info(void *send_info_args)
 {
-	uint8_t check_u8;
-	size_t sendBuff[4];
 	struct send_info *send_info_ptr = send_info_args;
+	uint8_t check_u8;
+	size_t sendBuff = send_info_ptr->archive_size;
+
 	//TODO 1 Parse xml file and get info about file
-	sendBuff[WORK_SHIFT] = send_info_ptr->work_size;
-	sendBuff[BIT_SHIFT] = send_info_ptr->bit_size;
-	sendBuff[DRIVER_SHIFT] = send_info_ptr->driver_size;
-	sendBuff[3] = sendBuff[WORK_SHIFT] + sendBuff[BIT_SHIFT]
-			+ sendBuff[DRIVER_SHIFT];
 
 	struct sockaddr_in dest_addr;
 	dest_addr.sin_family = AF_INET;
@@ -318,43 +314,28 @@ void *send_info(void *send_info_args)
 		if (check_u8 != CHECK_OKAY)
 			printf("master: send_info: check_failed ->retry");
 	} while (check_u8 != CHECK_OKAY);
-	close(return_socket); //TODO cancel
+	close(return_socket);
 	return NULL;
 
 }
 void *send_file(void *send_file_args)
 {
-
+	uint32_t *IP = send_file_args;
 	struct send_file *file_info_ptr = send_file_args;
 	uint8_t check_u8;
-	uint16_t port_u16;
 	int i;
 
-	switch (file_info_ptr->filetype_i)
-	{
-	case WORK_SHIFT:
-		port_u16 = TCP_RECV_WORK_PORT;
-		break;
-	case BIT_SHIFT:
-		port_u16 = TCP_RECV_BITSTREAM_PORT;
-		break;
-	case DRIVER_SHIFT:
-		port_u16 = TCP_RECV_DRIVER_PORT;
-		break;
-	default:
-		critErr("slave recv_file= filetype unknown");
-	}
 
 	char sendBuff[BUFFERSIZE];
 	memset(sendBuff, '0', sizeof(sendBuff));
 	int return_send;
 	struct sockaddr_in dest_addr;
 	dest_addr.sin_family = AF_INET;
-	dest_addr.sin_port = htons(port_u16);
-	dest_addr.sin_addr.s_addr = file_info_ptr->IP;
+	dest_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
+	dest_addr.sin_addr.s_addr = *IP;
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (return_socket < 0)
-		printf("socketerror:%s", strerror(errno));
+		critErr("master:send_info: socket error:");
 	do
 	{
 
@@ -363,19 +344,15 @@ void *send_file(void *send_file_args)
 				(struct sockaddr*) &dest_addr, sizeof(dest_addr));
 
 		if (return_connect < 0)
-			printf("connecterror:%s", strerror(errno));
+			critErr("master:send_info:connect error:");
 
 		FILE * pFile;
 
 		size_t result;
 
-		pFile = fopen(&(file_info_ptr->filename[0]), "rb");
+		pFile = fopen(ARCHIVE_NAME, "rb");
 		if (pFile == NULL)
-		{
-			fputs("File error", stderr);
-			exit(1);
-		}
-
+		critErr("master:send_info: file open:");
 		do
 		{
 			// copy the file into the buffer:
@@ -387,7 +364,6 @@ void *send_file(void *send_file_args)
 			return_send = send(return_socket, sendBuff, result, 0);
 			if (return_send < 0)
 				printf("master: send_file: senderror:%s", strerror(errno));
-			//TODO catch
 			else
 				printf("send data = %d\n", return_send);
 		} while (feof(pFile) == 0);
@@ -402,12 +378,10 @@ void *send_file(void *send_file_args)
 		if (check_u8 != CHECK_OKAY)
 		{
 			printf("master: send_info: check_failed ->retry");
-			sleep(2);
+			sleep(1);
 		}
 	} while (check_u8 != CHECK_OKAY);
 	return NULL;
 }
 
-void readXML(struct XML_args){
-}
-}
+

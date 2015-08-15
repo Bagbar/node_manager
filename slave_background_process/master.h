@@ -21,7 +21,7 @@
 
 struct send_info
 {
-	size_t work_size, bit_size, driver_size;
+	size_t archive_size;
 	uint32_t IP; //converted format for sockaddr_in
 };
 

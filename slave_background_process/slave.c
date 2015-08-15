@@ -235,12 +235,10 @@ void *receive_info(void * transfer_args)
 {
 	struct recv_info *recv_info_ptr = transfer_args;
 	uint8_t check_u8;
-	int recv_work_return_i, recv_bit_return_i, recv_driver_return_i;
-	pthread_t recv_bit_thread, recv_driver_thread, recv_work_thread,
-			work_thread;
+	pthread_t  recv_archive_thread,	work_thread;
 	struct recv_file recv_work_args, recv_bit_args, recv_driver_args;
 
-	size_t recvBuff[4];
+	size_t recvBuff;
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (return_socket < 0)
@@ -261,85 +259,25 @@ void *receive_info(void * transfer_args)
 	{
 		int return_accept = accept(return_socket, (struct sockaddr*) &client,
 				&len);
-		if (return_accept < 0)
+		if (return_accept < 0){
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
-
+			check_u8=CHECK_FAILED;}
 		recv(return_accept, recvBuff, sizeof recvBuff, 0);
-		if ((recvBuff[0] + recvBuff[1] + recvBuff[2]) == recvBuff[3])
-		{
-			if (recvBuff[0] == 0 && recvBuff[1] == 0 && recvBuff[2] == 0)
+
+
+			if (recvBuff == 0 )
 			{
 				pthread_cancel(work_thread);
 				check_u8 = WORK_THREAD_CANCELED;
 			}
 			else
 			{
-				recv_info_ptr->work_size = recvBuff[WORK_SHIFT];
-				recv_info_ptr->bit_size = recvBuff[BIT_SHIFT];
-				recv_info_ptr->driver_size = recvBuff[DRIVER_SHIFT];
 				check_u8 = CHECK_OKAY;
 			}
 
 			send(return_accept, &check_u8, 1, 0);
 			if (check_u8 == CHECK_OKAY)
-			{
-				recv_work_args.expected_size = recv_info_ptr->work_size;
-				recv_work_args.filetype_i = WORK_SHIFT;
-
-				recv_bit_args.expected_size = recv_info_ptr->bit_size;
-				recv_bit_args.filetype_i = BIT_SHIFT;
-
-				if (pthread_create(&recv_work_thread, NULL, receive_file,
-						(void*) &recv_work_args))
-				{
-					critErr("slave:receive_info:pthread_create(recv_prog)=");
-				}
-
-				if (pthread_create(&recv_bit_thread, NULL, receive_file,
-						(void*) &recv_bit_args))
-				{
-					critErr("slave:receive_info:pthread_create(recv_bit)=");
-				}
-
-				if (recv_info_ptr->driver_size > 0)
-				{
-					recv_driver_args.expected_size = recv_info_ptr->driver_size;
-					recv_driver_args.filetype_i = DRIVER_SHIFT;
-
-					if (pthread_create(&recv_driver_thread, NULL, receive_file,
-							(void*) &recv_driver_args))
-					{
-						critErr(
-								"slave:receive_info:pthread_create(recv_driver)=");
-					}
-				}
-
-				//TODO 1 check if all files are received successfully
-				pthread_join(recv_work_thread, NULL);
-				pthread_join(recv_bit_thread, NULL);
-				if (recv_info_ptr->driver_size > 0)
-				{
-					pthread_join(recv_driver_thread, NULL);
-
-					system("source load_driver.sh");
-				}
-
-				//TODO implement possibility for partial reconfig
-				system("source load_bitstream.sh");
-				if (pthread_create(&work_thread, NULL, execute_work,
-				NULL))
-				{
-					critErr("slave:receive_info:pthread_create(work_thread)=");
-				}
-
-			}
-			else
-			{
-				printf("slave: recv_info: size check failed");
-				check_u8 = CHECK_FAILED;
-			}
-
-		}
+			{		}
 		return NULL;
 	}
 }
@@ -352,29 +290,10 @@ void *receive_file(void * recv_file_args)
 	uint8_t check_u8;
 	size_t file_size = 0;
 	FILE * pFile;
-	uint16_t port_u16;
 	int recv_return_i, errorcount_i = 0;
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', sizeof(recvBuff));
 
-	char filename[5];
-	switch (file_info_ptr->filetype_i)
-	{
-	case WORK_SHIFT:
-		port_u16 = TCP_RECV_WORK_PORT;
-		strcpy(filename, "work");
-		break;
-	case BIT_SHIFT:
-		port_u16 = TCP_RECV_BITSTREAM_PORT;
-		strcpy(filename, "bit");
-		break;
-	case DRIVER_SHIFT:
-		port_u16 = TCP_RECV_DRIVER_PORT;
-		strcpy(filename, "drv");
-		break;
-	default:
-		critErr("slave recv_file= filetype unknown");
-	}
 
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -383,7 +302,7 @@ void *receive_file(void * recv_file_args)
 
 	struct sockaddr_in addr, client;
 	socklen_t len;
-	fillSockaddrAny(&addr, port_u16);
+	fillSockaddrAny(&addr, TCP_RECV_ARCHIVE_PORT);
 
 	int return_bind = bind(return_socket, (struct sockaddr*) &addr,
 			sizeof(addr));
@@ -398,7 +317,7 @@ void *receive_file(void * recv_file_args)
 		if (return_accept < 0)
 			printf("accepterror:%s\n", strerror(errno));
 
-		pFile = fopen(filename, "wb");
+		pFile = fopen("data.tar.gz", "wb");
 		if (pFile == NULL)
 		{
 			fputs("File error", stderr);
@@ -434,7 +353,7 @@ void *receive_file(void * recv_file_args)
 	} while (check_u8 == CHECK_FAILED && errorcount_i < 3);
 	if (errorcount_i >= 3)
 	{
-		printf("slave:receive_file: couldn't receive file : %s", filename);
+		printf("slave:receive_file: couldn't receive archive");
 		exit(6);
 	}
 	return NULL;

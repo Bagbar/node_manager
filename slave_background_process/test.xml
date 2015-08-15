@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<nodes>
+  <node id="1">
+    <bitstream>bit1</bitstream>
+    <destination>2</destination>
+    <work>work1</work>
+  </node>
+  <node id="2">
+    <work>work2</work>
+    <destination>3</destination>
+    <bitstream>bit2</bitstream>
+  </node>
+  <parallel id="3">
+    <work>parallel_work</work>
+    <bitstream>parallel_bit</bitstream>
+    <destination>master</destination>
+    <min>1</min>
+    <max>1000</max>
+    <weight>1</weight>
+  </parallel>
+  <master id="master">
+    <destination>1</destination>
+    <work>master_work</work>
+    <bitstream />
+  </master>
+</nodes>
