@@ -10,7 +10,6 @@
 
 #include "basics.h"
 #include <errno.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -19,11 +18,15 @@
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xmlstring.h>
 
-static void print_element_names(xmlNode * a_node);
+int XMLGetMinNodeAndTotalWeight(xmlDocPtr doc);
 
-void get_id(xmlNode * a_node);
+struct id_weight{
+	xmlChar *id;
+	int weight;
+};
 
-void XMLtest(char*filename);
+xmlDocPtr XMLread(char *filename);
 
+void XMLCleanup(xmlDocPtr doc,xmlDocPtr doc2);
 
 #endif /* XML_H_ */

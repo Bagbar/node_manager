@@ -23,7 +23,7 @@ void *slave_main(void *args_ptr)
 	int *master_ptr = ((struct slave_args*) args_ptr)->master_ptr; //TODO check if better with or without cast
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
-	uint8_t typeAndGroup[2];
+	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
 	int recvReturn_i;
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', BUFFERSIZE);
@@ -92,7 +92,7 @@ void *slave_main(void *args_ptr)
 		case 'i': ///identify self : send your Type to caller
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
-			printf("send:%d\n",
+			printf("slave:slave_main:send identify:%d\n",
 					(int) sendto(recvMast_sock, &typeAndGroup[0],
 							sizeof typeAndGroup, 0,
 							(struct sockaddr*) &cli_addr, cli_len));
@@ -235,10 +235,10 @@ void *receive_info(void * transfer_args)
 {
 	struct recv_info *recv_info_ptr = transfer_args;
 	uint8_t check_u8;
-	pthread_t  recv_archive_thread,	work_thread;
+	pthread_t recv_archive_thread, work_thread;
 	struct recv_file recv_work_args, recv_bit_args, recv_driver_args;
 
-	size_t recvBuff;
+	size_t file_size= 0;
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (return_socket < 0)
@@ -259,25 +259,27 @@ void *receive_info(void * transfer_args)
 	{
 		int return_accept = accept(return_socket, (struct sockaddr*) &client,
 				&len);
-		if (return_accept < 0){
+		if (return_accept < 0)
+		{
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
-			check_u8=CHECK_FAILED;}
-		recv(return_accept, recvBuff, sizeof recvBuff, 0);
+			check_u8 = CHECK_FAILED;
+		}
+		recv(return_accept, &file_size, sizeof file_size, 0);
 
+		if (file_size == 0)
+		{
+			pthread_cancel(work_thread);
+			check_u8 = WORK_THREAD_CANCELED;
+		}
+		else
+		{
+			check_u8 = CHECK_OKAY;
+		}
 
-			if (recvBuff == 0 )
-			{
-				pthread_cancel(work_thread);
-				check_u8 = WORK_THREAD_CANCELED;
-			}
-			else
-			{
-				check_u8 = CHECK_OKAY;
-			}
-
-			send(return_accept, &check_u8, 1, 0);
-			if (check_u8 == CHECK_OKAY)
-			{		}
+		send(return_accept, &check_u8, 1, 0);
+		if (check_u8 == CHECK_OKAY)
+		{
+		}
 		return NULL;
 	}
 }
@@ -293,7 +295,6 @@ void *receive_file(void * recv_file_args)
 	int recv_return_i, errorcount_i = 0;
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', sizeof(recvBuff));
-
 
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -348,7 +349,7 @@ void *receive_file(void * recv_file_args)
 			check_u8 = CHECK_OKAY;
 		}
 
-		send(return_accept,&check_u8,1,0);
+		send(return_accept, &check_u8, 1, 0);
 		close(return_accept);
 	} while (check_u8 == CHECK_FAILED && errorcount_i < 3);
 	if (errorcount_i >= 3)

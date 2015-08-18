@@ -13,17 +13,21 @@
 #include <pthread.h>
 #include <time.h>
 
+
 #include "basics.h"
 #include "slave.h"
 #include "master.h"
+#include "XML.h"
 
 uint8_t mac[6];
+uint32_t ownIP; //in network format (htonl/inet_addr used)
 
 int main()
 {
-	XMLtest("fuuuu");
-	return 0;
+
+
 	getMAC(mac);
+	ownIP = getIP();
 	int master_i = 0; // 0=no, 1=yes
 	uint8_t subgroup_u8 = CLUSTERGROUP;
 	uint64_t MAC = MACtoDecimal(mac);

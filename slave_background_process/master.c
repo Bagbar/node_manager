@@ -43,7 +43,9 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
 	printf("ip=%u \t type = %u added\n",
 			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32,
 			typeAndGroup[0]);
+	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->num_nodes_i++;
+	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 }
 
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
@@ -60,7 +62,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		returnRecv_i = recvfrom(receive_sock, &typeAndGroup,
 				sizeof typeAndGroup, 0, (struct sockaddr*) &response_addr,
 				&response_len);
-		if (returnRecv_i != 1)
+		if (returnRecv_i != 2)
 		{
 			if (returnRecv_i == -1)
 			{
@@ -75,7 +77,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 			}
 			else
 			{
-				printf("master_control: recvfrom wrongsize");
+				printf("master:readIdentifyanswers: recvfrom wrongsize");
 				exit(4); //should be exclusive for this
 			}
 		}
@@ -129,6 +131,7 @@ int master_control(int mastBroad_sock)
 	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
 	EST_NUM_BOARD * sizeof(struct node_data));
 	clusterInfo_sct.alive_count_u8 = 1;
+	pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
 
 	struct sockaddr_in broad_addr, recv_addr;
 	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
@@ -277,7 +280,9 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	}
 	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
 			sizeof(struct node_data), compareNodes);
+	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
+	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 
 }
 
@@ -325,7 +330,6 @@ void *send_file(void *send_file_args)
 	uint8_t check_u8;
 	int i;
 
-
 	char sendBuff[BUFFERSIZE];
 	memset(sendBuff, '0', sizeof(sendBuff));
 	int return_send;
@@ -352,7 +356,7 @@ void *send_file(void *send_file_args)
 
 		pFile = fopen(ARCHIVE_NAME, "rb");
 		if (pFile == NULL)
-		critErr("master:send_info: file open:");
+			critErr("master:send_info: file open:");
 		do
 		{
 			// copy the file into the buffer:
@@ -383,5 +387,38 @@ void *send_file(void *send_file_args)
 	} while (check_u8 != CHECK_OKAY);
 	return NULL;
 }
+
+
+
+void* start(void *start_args)
+{
+	//TODO free this pointer
+	int *return_ptr = malloc(sizeof(int));
+	struct cluster_info *clusterInfo_ptr = start_args;
+	int minNodes,restNodes;
+	char filename[10] = "test.xml";
+	xmlDocPtr inputXML = xmlParseFile(filename);
+	if (inputXML == NULL)
+		critErr("XML File not correct");
+	minNodes = XMLGetMinNodeAndTotalWeight(inputXML);
+
+		pthread_mutex_lock(&clusterInfo_ptr->mtx);
+		if (clusterInfo_ptr->num_nodes_i <minNodes)
+		{
+			printf("Not enough nodes available\t needed nodes:%d \t available nodes:%d",minNodes,clusterInfo_ptr->num_nodes_i);
+			pthread_mutex_unlock(&clusterInfo_ptr->mtx);
+			*return_ptr = -1;
+			return return_ptr;
+		}
+		else
+		{
+			pthread_mutex_unlock(&clusterInfo_ptr->mtx);
+
+		}
+
+
+	void XMLCleanup(inputXML,outputXML);
+}
+
 
 

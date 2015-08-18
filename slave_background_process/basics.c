@@ -33,6 +33,54 @@ void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port)
 	loop_addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 }
 
+uint32_t getIP()
+{
+	uint32_t IP;
+	struct ifaddrs *ifaddr, *ifa;
+	int family, s, n;
+	char host[NI_MAXHOST];
+
+	if (getifaddrs(&ifaddr) == -1)
+	{
+		perror("getifaddrs");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Walk through linked list, maintaining head pointer so we
+	 can free list later */
+
+	for (ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa->ifa_next, n++)
+	{
+		if (ifa->ifa_addr == NULL)
+			continue;
+
+		family = ifa->ifa_addr->sa_family;
+
+		/* For an AF_INET* interface address, display the address */
+
+		if (!strcmp(ifa->ifa_name, "eth0") && family == AF_INET)
+		{
+			printf("%-8s %s (%d)\n", ifa->ifa_name,
+					(family == AF_INET) ? "AF_INET" : "???", family);
+			s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
+					NI_MAXHOST,
+					NULL, 0, NI_NUMERICHOST);
+			if (s != 0)
+			{
+				printf("getnameinfo() failed: %s\n", gai_strerror(s));
+				exit(EXIT_FAILURE);
+			}
+
+			printf("\t\taddress: <%s>\n", host);
+			IP = inet_addr(host);
+
+		}
+	}
+
+	freeifaddrs(ifaddr);
+	return IP;
+}
+
 void getMAC(uint8_t *mac)
 {
 	char chr[18];

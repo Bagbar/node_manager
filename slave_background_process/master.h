@@ -16,8 +16,12 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "XML.h"
 
 #include "basics.h"
+
+extern uint32_t ownIP;
+
 
 struct send_info
 {
@@ -45,4 +49,9 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
 void *send_info(void *send_info_args);
 
 void *send_file(void *send_file_args);
+
+/**starts the distrubution und work
+ * returns a pointer to an int that has to be freed.
+ */
+void* start(void *start_args);
 #endif /* MASTER_H_ */

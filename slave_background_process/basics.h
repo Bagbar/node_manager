@@ -7,6 +7,12 @@
 #ifndef BASICS_H_INCLUDED
 #define BASICS_H_INCLUDED
 
+#define _GNU_SOURCE     /* To get defns of NI_MAXSERV and NI_MAXHOST */
+
+#include <netdb.h>
+#include <ifaddrs.h>
+#include <linux/if_link.h>
+
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
@@ -46,7 +52,7 @@
 #define UDP_ELECT_M_PORT 50003
 #define TCP_RECV_ARCHIVE_PORT 50010 //port for the archive with all needed data
 #define TCP_RECV_INFO_PORT 50011 //used for sending  administrative data to slaves
-#define TCP_RECV_DATA_PORT 50012 //receive the data that has to be processed
+#define TCP_RECV_DATA_PORT 40001 //receive the data that has to be processed
 
 //this has to be adjusted for the FPGA in use
 #define FPGATYPE ZYNQ7000
@@ -86,6 +92,7 @@ struct cluster_info
 	int size_i;
 	int num_nodes_i;
 	uint8_t alive_count_u8;
+	pthread_mutex_t mtx;
 };
 
 //function to exit the program and return an error description
