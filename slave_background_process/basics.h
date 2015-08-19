@@ -106,6 +106,8 @@ void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port);
 
 void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port);
 
+uint32_t getIP()
+
 //*mac has to point to an array with at least 6 Byte
 void getMAC(uint8_t *mac);
 

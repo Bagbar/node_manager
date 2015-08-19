@@ -24,7 +24,12 @@ uint32_t ownIP; //in network format (htonl/inet_addr used)
 
 int main()
 {
-
+	printf("hallo");
+	char filename[10] = "test.xml";
+	xmlDocPtr inputXML = xmlParseFile(filename);
+	printf("hallo");
+	XMLGetMinNodeAndTotalWeight(inputXML);
+	return 0;
 
 	getMAC(mac);
 	ownIP = getIP();

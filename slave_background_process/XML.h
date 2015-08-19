@@ -18,6 +18,9 @@
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xmlstring.h>
 
+#define MIN_SHIFT 0
+#define WEIGHT_SHIFT 1
+
 int XMLGetMinNodeAndTotalWeight(xmlDocPtr doc);
 
 struct id_weight{
