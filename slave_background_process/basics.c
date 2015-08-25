@@ -118,3 +118,14 @@ int compareNodes(const void * a, const void * b)
 	//alternativly
 	//return ( (*(struct node_data*)a).ip_u32 - (*(struct node_data*)b).ip_u32 );
 }
+
+char* networkToDottedIP(uint32_t ip)
+{
+
+    unsigned char bytes[4];
+    bytes[0] = ip & 0xFF;
+    bytes[1] = (ip >> 8) & 0xFF;
+    bytes[2] = (ip >> 16) & 0xFF;
+    bytes[3] = (ip >> 24) & 0xFF;
+    printf("%d.%d.%d.%d\n", bytes[3], bytes[2], bytes[1], bytes[0]);
+}

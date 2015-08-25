@@ -22,17 +22,41 @@
 uint8_t mac[6];
 uint32_t ownIP; //in network format (htonl/inet_addr used)
 
+
 int main()
 {
-	printf("hallo");
 	char filename[10] = "test.xml";
-	xmlDocPtr inputXML = xmlParseFile(filename);
-	printf("hallo");
-	XMLGetMinNodeAndTotalWeight(inputXML);
-	return 0;
-
 	getMAC(mac);
 	ownIP = getIP();
+
+	xmlDocPtr inputXML = xmlParseFile(filename);
+
+	struct cluster_info clusterInfo_sct;
+	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
+		EST_NUM_BOARD * sizeof(struct node_data));
+		clusterInfo_sct.alive_count_u8 = 1;
+		pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
+		clusterInfo_sct.num_nodes_i = 0;
+			clusterInfo_sct.size_i = EST_NUM_BOARD;
+			uint8_t typeAndGrouup[2]= {1,1};
+			addNode2List(&clusterInfo_sct,0x11111111,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111112,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111113,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111114,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111115,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111116,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x11111110,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,ownIP,typeAndGrouup);
+
+
+	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);
+	printf("weight = %d, minNodes = %d",nodeAndWeight[WEIGHT_SHIFT],nodeAndWeight[MIN_SHIFT]);
+
+	xmlDocPtr outputXML = buildCompleteXML(inputXML,&clusterInfo_sct,nodeAndWeight);
+	free(clusterInfo_sct.node_data_list_ptr);
+	XMLCleanup(inputXML,outputXML,nodeAndWeight);
+
+	return 0;
 	int master_i = 0; // 0=no, 1=yes
 	uint8_t subgroup_u8 = CLUSTERGROUP;
 	uint64_t MAC = MACtoDecimal(mac);

@@ -20,7 +20,7 @@
 
 #include "basics.h"
 
-extern uint32_t ownIP;
+
 
 
 struct send_info

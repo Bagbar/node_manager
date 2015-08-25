@@ -7,6 +7,8 @@
 
 #include "XML.h"
 
+extern uint32_t ownIP;
+
 static void print_element_names(xmlNode * a_node)
 {
 	xmlNode *cur_node = NULL;
@@ -21,24 +23,27 @@ static void print_element_names(xmlNode * a_node)
 	}
 }
 
-int XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
+int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 {
-
+	int *values_ptr = malloc(sizeof(int) * 2);
 	xmlNodePtr node = NULL;
 	xmlNodePtr child = NULL;
 	xmlChar *value;
 	node = xmlDocGetRootElement(doc);
 	node = node->children;
-	int convert_i, count_i = 0, totalweight_i = 0;
+	int convert_i;
+	values_ptr[MIN_SHIFT] = 0;
+	values_ptr[WEIGHT_SHIFT] = 0;
 	uint8_t found_u8_bit;
 
 	while (node) //node!=NULL
-	{printf("HALLO");
+	{
+
 		if (node->type == XML_ELEMENT_NODE)
 		{
 			if (!xmlStrcmp(node->name, (const xmlChar *) "master")
 					|| !xmlStrcmp(node->name, (const xmlChar *) "node"))
-				count_i++;
+				values_ptr[MIN_SHIFT]++;
 			else
 			{
 				if (!xmlStrcmp(node->name, (const xmlChar *) "parallel"))
@@ -52,35 +57,40 @@ int XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 						if (!(found_u8_bit & (1 << MIN_SHIFT)))
 						{
 							if (!xmlStrcmp(child->name,
-									(const xmlChar *) "value"))
+									(const xmlChar *) "min"))
 							{
 								found_u8_bit = found_u8_bit | (1 << MIN_SHIFT);
 								value = xmlNodeGetContent(child);
-								convert_i = (int) strtol((char*) value, NULL, 10);
+								convert_i = (int) strtol((char*) value, NULL,
+										10);
 								printf("convert_i = %d\n", convert_i);
-								count_i = count_i + convert_i;
+								values_ptr[MIN_SHIFT] = values_ptr[MIN_SHIFT]
+										+ convert_i;
 								xmlFree(value);
 							}
 						}
 						if (!(found_u8_bit & (1 << WEIGHT_SHIFT)))
 						{
 							if (!xmlStrcmp(child->name,
-									(const xmlChar *) "value"))
+									(const xmlChar *) "weight"))
 							{
-								found_u8_bit = found_u8_bit | (1 << WEIGHT_SHIFT);
+								found_u8_bit = found_u8_bit
+										| (1 << WEIGHT_SHIFT);
 								value = xmlNodeGetContent(child);
-								convert_i = (int) strtol((char*) value, NULL, 10);
+								convert_i = (int) strtol((char*) value, NULL,
+										10);
 								printf("convert_i = %d\n", convert_i);
-								totalweight_i = totalweight_i + convert_i;
+								values_ptr[WEIGHT_SHIFT] =
+										values_ptr[WEIGHT_SHIFT] + convert_i;
 								xmlFree(value);
 							}
 						}
-
-					}
+						child = child->next;
+					} // if there are no values_ptr it assumes a value of 1
 					if (!(found_u8_bit & 1 << MIN_SHIFT))
-						count_i++;
+						values_ptr[MIN_SHIFT]++;
 					if (!(found_u8_bit & 1 << WEIGHT_SHIFT))
-						totalweight_i++;
+						values_ptr[WEIGHT_SHIFT]++;
 
 				}
 				else
@@ -94,9 +104,10 @@ int XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 		node = node->next;
 
 	}
-	printf("XMLCalculateMinNode:count = %d\n", count_i);
-	printf("XMLCalculateMinNode:weight = %d\n", totalweight_i);
-	return count_i;
+	printf("XMLCalculateMinNode:count = %d\n", values_ptr[MIN_SHIFT]);
+	printf("XMLCalculateMinNode:weight = %d\n", values_ptr[WEIGHT_SHIFT]);
+
+	return values_ptr;
 }
 
 void get_id(xmlDocPtr doc, xmlNodePtr cur)
@@ -116,72 +127,97 @@ void get_id(xmlDocPtr doc, xmlNodePtr cur)
 	}
 }
 
-xmlDocPtr buildCompleteXML(xmlDocPtr doc, struct cluster_info *clusterInfo_ptr,
-		int minNodes)
+xmlDocPtr buildCompleteXML(xmlDocPtr docOld,
+		struct cluster_info *clusterInfo_ptr, int *values)
 {
 
-	xmlNodePtr root_element = NULL;
-	xmlChar *key;
-	int restNodes;
-	xmlDocPtr newdoc = xmlNewDoc((const xmlChar*) "1.0");
-	root_element = xmlNewNode(NULL, (const xmlChar*) "Nodes");
-	xmlDocSetRootElement(doc, root_element);
+	xmlNodePtr rootOld = NULL, rootNew = NULL, curNew = NULL, curOld = NULL,
+			masterOld = NULL, child = NULL;
+	xmlChar *value_str;
+	int restNodes, usedRestNodes, convert_i;
+	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
+	rootNew = xmlNewNode(NULL, (const xmlChar*) "Nodes");
+	xmlDocSetRootElement(docNew, rootNew);
+	rootOld = xmlDocGetRootElement(docOld);
+
+	curOld = rootOld->children;
+
+	printf("new Doc generated\n");
 	char IP_str[11];
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
-	restNodes = clusterInfo_ptr->num_nodes_i - minNodes;
+	restNodes = clusterInfo_ptr->num_nodes_i - values[MIN_SHIFT];
+	printf("numnodes = %d\n", clusterInfo_ptr->num_nodes_i);
+
 	for (int i = 0; i < clusterInfo_ptr->num_nodes_i; i++)
 	{
-		// TODO 1 add conversion to string
-		sprintf(IP_str, "%d", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);
-		xmlNewChild(root_element, NULL, IP_str, NULL);
-	}
-	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
-
-	xmlNodePtr node = NULL;
-	xmlNodePtr child = NULL;
-	xmlChar *weight_str;
-	node = xmlDocGetRootElement(doc);
-	node = node->children;
-	int convert_i, totalWeight_i = 0;
-	while (node) //node!=NULL
-	{
-		if (node->type == XML_ELEMENT_NODE)
+		printf("%d", i);
+		sprintf(IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);
+		printf("listip=%u\townIP=%u\n",
+				clusterInfo_ptr->node_data_list_ptr[i].ip_u32, ownIP);
+		curNew = xmlNewChild(rootNew, NULL, (xmlChar *) IP_str, NULL);
+		if (clusterInfo_ptr->node_data_list_ptr[i].ip_u32 == ownIP)
 		{
-			if (!xmlStrcmp(node->name, (const xmlChar *) "master")
-					|| !xmlStrcmp(node->name, (const xmlChar *) "node"))
-				totalWeight_i++;
-			else
+			xmlNewProp(curNew, (xmlChar*) "id", (xmlChar*) "master");
+			masterOld = rootOld->children;
+			while (xmlStrcmp(masterOld->name, (const xmlChar *) "master")
+					&& masterOld != NULL)
 			{
-				if (!xmlStrcmp(node->name, (const xmlChar *) "parallel"))
+				masterOld = masterOld->next;
+				printf("searching new master:%p\n", masterOld->name);
+			}
+			curNew->children = masterOld->children;
+		}
+	}
+	printf("forloop finished \n");
+	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
+	curNew = rootNew->children;
+	while (curNew->type != XML_ELEMENT_NODE && curNew != NULL)
+		curNew = curNew->next;
+	while (curOld != NULL)
+	{
+		if (curOld->type == XML_ELEMENT_NODE)
+		{
+			if (!xmlStrcmp(xmlGetProp(curNew, (xmlChar *) "id"),
+					(xmlChar*) "master"))
+			{
+				do
 				{
-					child = node->children;
-					while (xmlStrcmp(child->name, (const xmlChar *) "min"))
-					{
-						child = child->next;
-						if (child == NULL)
-						{
-							printf(
-									"XMLCalculateMinNode: No minimum value in parallel block");
-							return -1;
-						}
-					}
-					weight_str = xmlNodeGetContent(child);
+					curNew = curNew->next;
+				} while (curNew->type != XML_ELEMENT_NODE && curNew != NULL);
+			}
+			if (curNew != NULL)
+			{
+				if (!xmlStrcmp(curOld->name, (const xmlChar *) "node"))
+				{
+					xmlSetProp(curNew, (xmlChar *) "id",
+							xmlGetProp(curOld, (xmlChar *) "id"));
+					curNew->children = curOld->children;
 
-					convert_i = (int) strtol((char*) weight_str, NULL, 10);
-					printf("convert_i = %d\n", convert_i);
-					totalWeight_i = totalWeight_i + convert_i;
-					xmlFree(weight_str);
+					do
+					{
+						curNew = curNew->next;
+					} while (curNew->type != XML_ELEMENT_NODE && curNew != NULL);
+
+				}
+				else
+				{
+					if (!xmlStrcmp(curOld->name, (const xmlChar *) "parallel"))
+					{   //TODO 1 continue
+						XMLsearchElementAndGetInt(curOld,(xmlChar *)"min");
+						XMLsearchElementAndGetInt(curOld,(xmlChar *)"weight");
+
+					}
 				}
 			}
-
 		}
-		node = node->next;
-
+		curOld = curOld->next;
 	}
 
-	xmlSaveFile(BAD_CAST "newfile.xml", newdoc);
+	print_element_names(rootNew);
 
-	return newdoc;
+	printf("saving file");
+	xmlSaveFile("newfile.xml", docNew);
+	return docNew;
 }
 
 xmlDocPtr XMLread(char *filename)
@@ -191,10 +227,28 @@ xmlDocPtr XMLread(char *filename)
 		critErr("XML File not correct");
 	return XMLdoc;
 }
-void XMLCleanup(xmlDocPtr doc, xmlDocPtr doc2)
+void XMLCleanup(xmlDocPtr doc, xmlDocPtr doc2, int *values)
 {
+	free(values);
 	xmlFreeDoc(doc2);
 	xmlFreeDoc(doc); // free document
 	xmlCleanupParser(); // Free globals
 }
 
+int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName)
+{
+	int convert_i;
+	xmlChar* value_str;
+	xmlNodePtr child = cur->children;
+	while (xmlStrcmp(child->name, ElementName) && child != NULL)
+	{
+		child = child->next;
+		printf("searching %s:%s\n", ElementName, child->name);
+	}
+	value_str = xmlNodeGetContent(child);
+	convert_i = (int) strtol((char*) value_str, NULL, 10);
+	printf("convert_i = %d\n", convert_i);
+	xmlFree(value_str);
+
+	return convert_i;
+}

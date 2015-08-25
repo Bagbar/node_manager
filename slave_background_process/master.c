@@ -7,6 +7,8 @@
 
 #include "master.h"
 
+extern uint32_t ownIP;
+
 #define BUFFERSIZE 1024
 
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
@@ -133,9 +135,6 @@ int master_control(int mastBroad_sock)
 	clusterInfo_sct.alive_count_u8 = 1;
 	pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
 
-	struct sockaddr_in broad_addr, recv_addr;
-	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
-
 	if (clusterInfo_sct.node_data_list_ptr == NULL)
 	{
 		free(clusterInfo_sct.node_data_list_ptr);
@@ -144,6 +143,11 @@ int master_control(int mastBroad_sock)
 	}
 	clusterInfo_sct.num_nodes_i = 0;
 	clusterInfo_sct.size_i = EST_NUM_BOARD;
+
+
+	struct sockaddr_in broad_addr, recv_addr;
+		socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
+
 
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
@@ -395,17 +399,23 @@ void* start(void *start_args)
 	//TODO free this pointer
 	int *return_ptr = malloc(sizeof(int));
 	struct cluster_info *clusterInfo_ptr = start_args;
-	int minNodes,restNodes;
+	int *values;
+	int restNodes;
 	char filename[10] = "test.xml";
-	xmlDocPtr inputXML = xmlParseFile(filename);
+	xmlDocPtr inputXML = xmlParseFile(filename),outputXML= NULL;
 	if (inputXML == NULL)
-		critErr("XML File not correct");
-	minNodes = XMLGetMinNodeAndTotalWeight(inputXML);
+	{
+		printf("XML File not correct");
+		*return_ptr =-1;
+		return return_ptr;
+	}
+	pthread_mutex_lock(&clusterInfo_ptr->mtx);
+	*values = XMLGetMinNodeAndTotalWeight(inputXML);
 
-		pthread_mutex_lock(&clusterInfo_ptr->mtx);
-		if (clusterInfo_ptr->num_nodes_i <minNodes)
+
+		if (values[MIN_SHIFT]>clusterInfo_ptr->num_nodes_i)
 		{
-			printf("Not enough nodes available\t needed nodes:%d \t available nodes:%d",minNodes,clusterInfo_ptr->num_nodes_i);
+			printf("too few nodes available\t available =%d\t needed =%d\n",clusterInfo_ptr->num_nodes_i,values[MIN_SHIFT]);
 			pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 			*return_ptr = -1;
 			return return_ptr;
@@ -417,8 +427,9 @@ void* start(void *start_args)
 		}
 
 
-	void XMLCleanup(inputXML,outputXML);
+	 XMLCleanup(inputXML,outputXML,values);
 }
+
 
 
 
