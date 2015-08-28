@@ -95,24 +95,39 @@ struct cluster_info
 	pthread_mutex_t mtx;
 };
 
-//function to exit the program and return an error description
+///function to exit the program and return an error description
 void critErr(char *s);
 
-//fills the sockaddr_in struct for Broadcasts
+///fills the sockaddr_in struct for Broadcasts
 void fillSockaddrBroad(struct sockaddr_in *broad_addr, uint16_t port);
 
-//fills the sockaddr_in struct for receiving from any IP
+///fills the sockaddr_in struct for receiving from any IP
 void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port);
 
+///fills the sockaddr_in struct with the target of the loopback address
 void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port);
 
+///reads the IP with getifaddrs and returns the networf format of the IP address, designed for one active IF
 uint32_t getIP();
 
-//*mac has to point to an array with at least 6 Byte
+/**\\brief reads the MAC from "/sys/class/net/eth0/address"
+ *
+ * returns the MAC in 6 Byte chunks to the pointer
+ **mac has to point to an array with at least 6 Byte
+*/
 void getMAC(uint8_t *mac);
 
+/**\brief takes a MAC in the 6 unsigned char array format and converts it to uint64_t
+ *
+ *  Generally the bits stay the same only the type should change, this is done by bit shifts
+ *  of the array components to the correct position
+ */
 uint64_t MACtoDecimal(uint8_t *mac);
 
+/*\ brief compare function for sorting algorithm
+ *
+ *  conforms to the compare standard format
+ */
 int compareNodes(const void * a, const void * b);
 
 // BASICS_H_INCLUDED

@@ -1,0 +1,29 @@
+\hypertarget{structcluster__info}{}\section{cluster\+\_\+info Struct Reference}
+\label{structcluster__info}\index{cluster\+\_\+info@{cluster\+\_\+info}}
+
+
+Collaboration diagram for cluster\+\_\+info\+:
+% FIG 0
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{structcluster__info_a91dfea1717d57e65d6f0bbcd3916d5cf}{}struct \hyperlink{structnode__data}{node\+\_\+data} $\ast$ {\bfseries node\+\_\+data\+\_\+list\+\_\+ptr}\label{structcluster__info_a91dfea1717d57e65d6f0bbcd3916d5cf}
+
+\item 
+\hypertarget{structcluster__info_ab55c14162544e8f537b897619704e7e8}{}int {\bfseries size\+\_\+i}\label{structcluster__info_ab55c14162544e8f537b897619704e7e8}
+
+\item 
+\hypertarget{structcluster__info_a9ec723e70de19c5ea3598c01b58f0733}{}int {\bfseries num\+\_\+nodes\+\_\+i}\label{structcluster__info_a9ec723e70de19c5ea3598c01b58f0733}
+
+\item 
+\hypertarget{structcluster__info_a924ff505a27aa3841de1e11f2925a16a}{}uint8\+\_\+t {\bfseries alive\+\_\+count\+\_\+u8}\label{structcluster__info_a924ff505a27aa3841de1e11f2925a16a}
+
+\item 
+\hypertarget{structcluster__info_a2680f9fe5653a596c7e779b838180fdc}{}pthread\+\_\+mutex\+\_\+t {\bfseries mtx}\label{structcluster__info_a2680f9fe5653a596c7e779b838180fdc}
+
+\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/basics.\+h\end{DoxyCompactItemize}

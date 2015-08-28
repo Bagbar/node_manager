@@ -35,10 +35,10 @@ void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port)
 
 uint32_t getIP()
 {
-	uint32_t IP;
+	uint32_t IP =0;
 	struct ifaddrs *ifaddr, *ifa;
 	int family, s, n;
-	char host[NI_MAXHOST];
+	char host[NI_MAXHOST], found=0;
 
 	if (getifaddrs(&ifaddr) == -1)
 	{
@@ -75,6 +75,25 @@ uint32_t getIP()
 			IP = inet_addr(host);
 
 		}
+		//TODO check if this does not activate if eth1 is not active
+		if (!strcmp(ifa->ifa_name, "eth1") && family == AF_INET)
+				{
+					printf("%-8s %s (%d)\n", ifa->ifa_name,
+							(family == AF_INET) ? "AF_INET" : "???", family);
+					s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
+							NI_MAXHOST,
+							NULL, 0, NI_NUMERICHOST);
+					if (s != 0)
+					{
+						printf("getnameinfo() failed: %s\n", gai_strerror(s));
+						exit(EXIT_FAILURE);
+					}
+
+					printf("\t\taddress: <%s>\n", host);
+					IP = inet_addr(host);
+
+				}
+
 	}
 
 	freeifaddrs(ifaddr);

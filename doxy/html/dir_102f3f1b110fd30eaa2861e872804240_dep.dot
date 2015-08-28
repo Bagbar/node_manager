@@ -1,0 +1,6 @@
+digraph "/home/xubuntu/git/node_manager/slave_background_process" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  dir_102f3f1b110fd30eaa2861e872804240 [shape=box, label="slave_background_process", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_102f3f1b110fd30eaa2861e872804240.html"];
+}

@@ -19,11 +19,6 @@
 
 #include "basics.h"
 
-void *slave_main(void *args_struct);
-int elect_master();
-void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
-		int electRecv_sock);
-
 struct recv_info
 {
 	size_t work_size, bit_size, driver_size;
@@ -36,6 +31,13 @@ struct recv_file
 	size_t expected_size;
 	int filetype_i;
 };
+
+void *slave_main(void *args_struct);
+int elect_master();
+void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
+		int electRecv_sock);
+
+
 
 void *receive_info(void * transfer_args);
 

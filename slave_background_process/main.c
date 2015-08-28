@@ -29,6 +29,7 @@ int main()
 	getMAC(mac);
 	ownIP = getIP();
 
+
 	xmlDocPtr inputXML = xmlParseFile(filename);
 
 	struct cluster_info clusterInfo_sct;
@@ -47,6 +48,7 @@ int main()
 			addNode2List(&clusterInfo_sct,0x11111116,typeAndGrouup);
 			addNode2List(&clusterInfo_sct,0x11111110,typeAndGrouup);
 			addNode2List(&clusterInfo_sct,ownIP,typeAndGrouup);
+			addNode2List(&clusterInfo_sct,0x10101010,typeAndGrouup);
 
 
 	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);

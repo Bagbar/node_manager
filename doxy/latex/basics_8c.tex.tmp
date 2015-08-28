@@ -1,0 +1,122 @@
+\hypertarget{basics_8c}{}\section{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/basics.c File Reference}
+\label{basics_8c}\index{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/basics.\+c@{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/basics.\+c}}
+{\ttfamily \#include \char`\"{}basics.\+h\char`\"{}}\\*
+Include dependency graph for basics.\+c\+:
+% FIG 0
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{basics_8c_a57132b8c4e75f149153791df61f7ce9a}{crit\+Err} (char $\ast$s)
+\begin{DoxyCompactList}\small\item\em function to exit the program and return an error description \end{DoxyCompactList}\item 
+void \hyperlink{basics_8c_a0e618f3288d6249a5e658e8a0cbdc713}{fill\+Sockaddr\+Broad} (struct sockaddr\+\_\+in $\ast$broad\+\_\+addr, uint16\+\_\+t port)
+\begin{DoxyCompactList}\small\item\em fills the sockaddr\+\_\+in struct for Broadcasts \end{DoxyCompactList}\item 
+void \hyperlink{basics_8c_a3e219e88291397e8e3669a933d762d2e}{fill\+Sockaddr\+Any} (struct sockaddr\+\_\+in $\ast$any\+\_\+addr, uint16\+\_\+t port)
+\begin{DoxyCompactList}\small\item\em fills the sockaddr\+\_\+in struct for receiving from any I\+P \end{DoxyCompactList}\item 
+void \hyperlink{basics_8c_a3e46eed3962f970bb9d2cab1598103d3}{fill\+Sockaddr\+Loop} (struct sockaddr\+\_\+in $\ast$loop\+\_\+addr, uint16\+\_\+t port)
+\begin{DoxyCompactList}\small\item\em fills the sockaddr\+\_\+in struct with the target of the loopback address \end{DoxyCompactList}\item 
+uint32\+\_\+t \hyperlink{basics_8c_ab9d612a40487f33d8cf6fab9e77917f2}{get\+I\+P} ()
+\begin{DoxyCompactList}\small\item\em reads the I\+P with getifaddrs and returns the networf format of the I\+P address, designed for one active I\+F \end{DoxyCompactList}\item 
+void \hyperlink{basics_8c_a2233e40d3d3f25229d81d0b06935c905}{get\+M\+A\+C} (uint8\+\_\+t $\ast$\hyperlink{slave_8c_a2f32c75fb4bc7ba39243ef4a9f8eacc1}{mac})
+\item 
+uint64\+\_\+t \hyperlink{basics_8c_a4af579f8d6cdfc0c5f9ac3a9b22e5991}{M\+A\+Cto\+Decimal} (uint8\+\_\+t $\ast$\hyperlink{slave_8c_a2f32c75fb4bc7ba39243ef4a9f8eacc1}{mac})
+\begin{DoxyCompactList}\small\item\em takes a M\+A\+C in the 6 unsigned char array format and converts it to uint64\+\_\+t \end{DoxyCompactList}\item 
+int \hyperlink{basics_8c_ab510c559f64d5650479c1bee2d40a7a2}{compare\+Nodes} (const void $\ast$a, const void $\ast$b)
+\item 
+char $\ast$ \hyperlink{basics_8c_a5e00cc7361be728e1b0fe66dfb73d8bc}{network\+To\+Dotted\+I\+P} (uint32\+\_\+t ip)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{basics_8c_ab510c559f64d5650479c1bee2d40a7a2}{}\index{basics.\+c@{basics.\+c}!compare\+Nodes@{compare\+Nodes}}
+\index{compare\+Nodes@{compare\+Nodes}!basics.\+c@{basics.\+c}}
+\subsubsection[{compare\+Nodes}]{\setlength{\rightskip}{0pt plus 5cm}int compare\+Nodes (
+\begin{DoxyParamCaption}
+\item[{const void $\ast$}]{a, }
+\item[{const void $\ast$}]{b}
+\end{DoxyParamCaption}
+)}\label{basics_8c_ab510c559f64d5650479c1bee2d40a7a2}
+\hypertarget{basics_8c_a57132b8c4e75f149153791df61f7ce9a}{}\index{basics.\+c@{basics.\+c}!crit\+Err@{crit\+Err}}
+\index{crit\+Err@{crit\+Err}!basics.\+c@{basics.\+c}}
+\subsubsection[{crit\+Err}]{\setlength{\rightskip}{0pt plus 5cm}void crit\+Err (
+\begin{DoxyParamCaption}
+\item[{char $\ast$}]{s}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a57132b8c4e75f149153791df61f7ce9a}
+
+
+function to exit the program and return an error description 
+
+\hypertarget{basics_8c_a3e219e88291397e8e3669a933d762d2e}{}\index{basics.\+c@{basics.\+c}!fill\+Sockaddr\+Any@{fill\+Sockaddr\+Any}}
+\index{fill\+Sockaddr\+Any@{fill\+Sockaddr\+Any}!basics.\+c@{basics.\+c}}
+\subsubsection[{fill\+Sockaddr\+Any}]{\setlength{\rightskip}{0pt plus 5cm}void fill\+Sockaddr\+Any (
+\begin{DoxyParamCaption}
+\item[{struct sockaddr\+\_\+in $\ast$}]{any\+\_\+addr, }
+\item[{uint16\+\_\+t}]{port}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a3e219e88291397e8e3669a933d762d2e}
+
+
+fills the sockaddr\+\_\+in struct for receiving from any I\+P 
+
+\hypertarget{basics_8c_a0e618f3288d6249a5e658e8a0cbdc713}{}\index{basics.\+c@{basics.\+c}!fill\+Sockaddr\+Broad@{fill\+Sockaddr\+Broad}}
+\index{fill\+Sockaddr\+Broad@{fill\+Sockaddr\+Broad}!basics.\+c@{basics.\+c}}
+\subsubsection[{fill\+Sockaddr\+Broad}]{\setlength{\rightskip}{0pt plus 5cm}void fill\+Sockaddr\+Broad (
+\begin{DoxyParamCaption}
+\item[{struct sockaddr\+\_\+in $\ast$}]{broad\+\_\+addr, }
+\item[{uint16\+\_\+t}]{port}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a0e618f3288d6249a5e658e8a0cbdc713}
+
+
+fills the sockaddr\+\_\+in struct for Broadcasts 
+
+\hypertarget{basics_8c_a3e46eed3962f970bb9d2cab1598103d3}{}\index{basics.\+c@{basics.\+c}!fill\+Sockaddr\+Loop@{fill\+Sockaddr\+Loop}}
+\index{fill\+Sockaddr\+Loop@{fill\+Sockaddr\+Loop}!basics.\+c@{basics.\+c}}
+\subsubsection[{fill\+Sockaddr\+Loop}]{\setlength{\rightskip}{0pt plus 5cm}void fill\+Sockaddr\+Loop (
+\begin{DoxyParamCaption}
+\item[{struct sockaddr\+\_\+in $\ast$}]{loop\+\_\+addr, }
+\item[{uint16\+\_\+t}]{port}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a3e46eed3962f970bb9d2cab1598103d3}
+
+
+fills the sockaddr\+\_\+in struct with the target of the loopback address 
+
+\hypertarget{basics_8c_ab9d612a40487f33d8cf6fab9e77917f2}{}\index{basics.\+c@{basics.\+c}!get\+I\+P@{get\+I\+P}}
+\index{get\+I\+P@{get\+I\+P}!basics.\+c@{basics.\+c}}
+\subsubsection[{get\+I\+P}]{\setlength{\rightskip}{0pt plus 5cm}uint32\+\_\+t get\+I\+P (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{basics_8c_ab9d612a40487f33d8cf6fab9e77917f2}
+
+
+reads the I\+P with getifaddrs and returns the networf format of the I\+P address, designed for one active I\+F 
+
+\hypertarget{basics_8c_a2233e40d3d3f25229d81d0b06935c905}{}\index{basics.\+c@{basics.\+c}!get\+M\+A\+C@{get\+M\+A\+C}}
+\index{get\+M\+A\+C@{get\+M\+A\+C}!basics.\+c@{basics.\+c}}
+\subsubsection[{get\+M\+A\+C}]{\setlength{\rightskip}{0pt plus 5cm}void get\+M\+A\+C (
+\begin{DoxyParamCaption}
+\item[{uint8\+\_\+t $\ast$}]{mac}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a2233e40d3d3f25229d81d0b06935c905}
+\textbackslash{}brief reads the M\+A\+C from \char`\"{}/sys/class/net/eth0/address\char`\"{}
+
+returns the M\+A\+C in 6 Byte chunks to the pointer mac has to point to an array with at least 6 Byte \hypertarget{basics_8c_a4af579f8d6cdfc0c5f9ac3a9b22e5991}{}\index{basics.\+c@{basics.\+c}!M\+A\+Cto\+Decimal@{M\+A\+Cto\+Decimal}}
+\index{M\+A\+Cto\+Decimal@{M\+A\+Cto\+Decimal}!basics.\+c@{basics.\+c}}
+\subsubsection[{M\+A\+Cto\+Decimal}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t M\+A\+Cto\+Decimal (
+\begin{DoxyParamCaption}
+\item[{uint8\+\_\+t $\ast$}]{mac}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a4af579f8d6cdfc0c5f9ac3a9b22e5991}
+
+
+takes a M\+A\+C in the 6 unsigned char array format and converts it to uint64\+\_\+t 
+
+Generally the bits stay the same only the type should change, this is done by bit shifts of the array components to the correct position \hypertarget{basics_8c_a5e00cc7361be728e1b0fe66dfb73d8bc}{}\index{basics.\+c@{basics.\+c}!network\+To\+Dotted\+I\+P@{network\+To\+Dotted\+I\+P}}
+\index{network\+To\+Dotted\+I\+P@{network\+To\+Dotted\+I\+P}!basics.\+c@{basics.\+c}}
+\subsubsection[{network\+To\+Dotted\+I\+P}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ network\+To\+Dotted\+I\+P (
+\begin{DoxyParamCaption}
+\item[{uint32\+\_\+t}]{ip}
+\end{DoxyParamCaption}
+)}\label{basics_8c_a5e00cc7361be728e1b0fe66dfb73d8bc}

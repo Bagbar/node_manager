@@ -1,0 +1,122 @@
+\hypertarget{master_8h}{}\section{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/master.h File Reference}
+\label{master_8h}\index{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/master.\+h@{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/master.\+h}}
+{\ttfamily \#include $<$stdio.\+h$>$}\\*
+{\ttfamily \#include $<$stdlib.\+h$>$}\\*
+{\ttfamily \#include $<$sys/socket.\+h$>$}\\*
+{\ttfamily \#include $<$sys/types.\+h$>$}\\*
+{\ttfamily \#include $<$netinet/in.\+h$>$}\\*
+{\ttfamily \#include $<$netinet/ip.\+h$>$}\\*
+{\ttfamily \#include $<$arpa/inet.\+h$>$}\\*
+{\ttfamily \#include $<$unistd.\+h$>$}\\*
+{\ttfamily \#include \char`\"{}X\+M\+L.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}basics.\+h\char`\"{}}\\*
+Include dependency graph for master.\+h\+:
+% FIG 0
+This graph shows which files directly or indirectly include this file\+:
+% FIG 1
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structsend__info}{send\+\_\+info}
+\item 
+struct \hyperlink{structsend__file}{send\+\_\+file}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{master_8h_a4fd036f71ef4efa12b5b1d9674657f5a}{master\+\_\+control} (int mast\+Broad\+\_\+sock)
+\begin{DoxyCompactList}\small\item\em gets called when Node is elected as master, manages network exploration, job receiving and process distrubution \end{DoxyCompactList}\item 
+void \hyperlink{master_8h_af3314d42f209e07aedcecb0ba4fa50ab}{add\+Node2\+List} (struct \hyperlink{structcluster__info}{cluster\+\_\+info} $\ast$cluster\+Info\+\_\+ptr, uint32\+\_\+t ip\+\_\+u32, uint8\+\_\+t $\ast$type\+And\+Group)
+\begin{DoxyCompactList}\small\item\em adds nodes with to cluster\+Info with the info of I\+P, type and group \end{DoxyCompactList}\item 
+void \hyperlink{master_8h_adf8f0f293f3ba34130d8c1e2e7229016}{read\+Identify\+Answers} (int receive\+\_\+sock, struct \hyperlink{structcluster__info}{cluster\+\_\+info} $\ast$cluster\+Info\+\_\+ptr, uint8\+\_\+t new\+List\+\_\+u8)
+\begin{DoxyCompactList}\small\item\em receives the previous triggered identification messages from the network and modifies the cluster\+Indo \end{DoxyCompactList}\item 
+void \hyperlink{master_8h_aee6054f4ab98bc8dbeaac41e2fe329d7}{update\+Cluster\+Info} (struct \hyperlink{structcluster__info}{cluster\+\_\+info} $\ast$cluster\+Info\+\_\+ptr, int receive\+\_\+sock)
+\begin{DoxyCompactList}\small\item\em calls read\+Identify\+Answers and removes node that are not active from the list \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{master_8h_af1e8e114a97b6c808d95e6cf1c988d44}{send\+\_\+info} (void $\ast$send\+\_\+info\+\_\+args)
+\begin{DoxyCompactList}\small\item\em sends information about the program files to the node \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{master_8h_afa0f6ce76de0ac36e56a082af68c04ce}{send\+\_\+file} (void $\ast$send\+\_\+file\+\_\+args)
+\begin{DoxyCompactList}\small\item\em sends file to the target \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{master_8h_a51d6a5e8639f55156535427341291afc}{start} (void $\ast$start\+\_\+args)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{master_8h_af3314d42f209e07aedcecb0ba4fa50ab}{}\index{master.\+h@{master.\+h}!add\+Node2\+List@{add\+Node2\+List}}
+\index{add\+Node2\+List@{add\+Node2\+List}!master.\+h@{master.\+h}}
+\subsubsection[{add\+Node2\+List}]{\setlength{\rightskip}{0pt plus 5cm}void add\+Node2\+List (
+\begin{DoxyParamCaption}
+\item[{struct {\bf cluster\+\_\+info} $\ast$}]{cluster\+Info\+\_\+ptr, }
+\item[{uint32\+\_\+t}]{ip\+\_\+u32, }
+\item[{uint8\+\_\+t $\ast$}]{type\+And\+Group}
+\end{DoxyParamCaption}
+)}\label{master_8h_af3314d42f209e07aedcecb0ba4fa50ab}
+
+
+adds nodes with to cluster\+Info with the info of I\+P, type and group 
+
+just adds nodes at the end and changes the relevant parameters does not sort the list \hypertarget{master_8h_a4fd036f71ef4efa12b5b1d9674657f5a}{}\index{master.\+h@{master.\+h}!master\+\_\+control@{master\+\_\+control}}
+\index{master\+\_\+control@{master\+\_\+control}!master.\+h@{master.\+h}}
+\subsubsection[{master\+\_\+control}]{\setlength{\rightskip}{0pt plus 5cm}int master\+\_\+control (
+\begin{DoxyParamCaption}
+\item[{int}]{mast\+Broad\+\_\+sock}
+\end{DoxyParamCaption}
+)}\label{master_8h_a4fd036f71ef4efa12b5b1d9674657f5a}
+
+
+gets called when Node is elected as master, manages network exploration, job receiving and process distrubution 
+
+\hypertarget{master_8h_adf8f0f293f3ba34130d8c1e2e7229016}{}\index{master.\+h@{master.\+h}!read\+Identify\+Answers@{read\+Identify\+Answers}}
+\index{read\+Identify\+Answers@{read\+Identify\+Answers}!master.\+h@{master.\+h}}
+\subsubsection[{read\+Identify\+Answers}]{\setlength{\rightskip}{0pt plus 5cm}void read\+Identify\+Answers (
+\begin{DoxyParamCaption}
+\item[{int}]{receive\+\_\+sock, }
+\item[{struct {\bf cluster\+\_\+info} $\ast$}]{cluster\+Info\+\_\+ptr, }
+\item[{uint8\+\_\+t}]{new\+List\+\_\+u8}
+\end{DoxyParamCaption}
+)}\label{master_8h_adf8f0f293f3ba34130d8c1e2e7229016}
+
+
+receives the previous triggered identification messages from the network and modifies the cluster\+Indo 
+
+uses add\+Node2\+List when it has the needed information for the list and sorts the it if new\+List is 0 it checks if the same I\+P is in the list and marks the nodes as active if it is or adds if it is new and sorts the list if new\+List is not 0 all received information is added and the list is sorted afterwards. No check for nodes already in the list is done. in any case cluster\+Info has to be configured correctly before \hypertarget{master_8h_afa0f6ce76de0ac36e56a082af68c04ce}{}\index{master.\+h@{master.\+h}!send\+\_\+file@{send\+\_\+file}}
+\index{send\+\_\+file@{send\+\_\+file}!master.\+h@{master.\+h}}
+\subsubsection[{send\+\_\+file}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ {\bf send\+\_\+file} (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{send\+\_\+file\+\_\+args}
+\end{DoxyParamCaption}
+)}\label{master_8h_afa0f6ce76de0ac36e56a082af68c04ce}
+
+
+sends file to the target 
+
+\hypertarget{master_8h_af1e8e114a97b6c808d95e6cf1c988d44}{}\index{master.\+h@{master.\+h}!send\+\_\+info@{send\+\_\+info}}
+\index{send\+\_\+info@{send\+\_\+info}!master.\+h@{master.\+h}}
+\subsubsection[{send\+\_\+info}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ {\bf send\+\_\+info} (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{send\+\_\+info\+\_\+args}
+\end{DoxyParamCaption}
+)}\label{master_8h_af1e8e114a97b6c808d95e6cf1c988d44}
+
+
+sends information about the program files to the node 
+
+At the moment this is only the size of the archive that will be send \hypertarget{master_8h_a51d6a5e8639f55156535427341291afc}{}\index{master.\+h@{master.\+h}!start@{start}}
+\index{start@{start}!master.\+h@{master.\+h}}
+\subsubsection[{start}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ start (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{start\+\_\+args}
+\end{DoxyParamCaption}
+)}\label{master_8h_a51d6a5e8639f55156535427341291afc}
+starts the distrubution and work returns a pointer to an int that has to be freed. \hypertarget{master_8h_aee6054f4ab98bc8dbeaac41e2fe329d7}{}\index{master.\+h@{master.\+h}!update\+Cluster\+Info@{update\+Cluster\+Info}}
+\index{update\+Cluster\+Info@{update\+Cluster\+Info}!master.\+h@{master.\+h}}
+\subsubsection[{update\+Cluster\+Info}]{\setlength{\rightskip}{0pt plus 5cm}void update\+Cluster\+Info (
+\begin{DoxyParamCaption}
+\item[{struct {\bf cluster\+\_\+info} $\ast$}]{cluster\+Info\+\_\+ptr, }
+\item[{int}]{receive\+\_\+sock}
+\end{DoxyParamCaption}
+)}\label{master_8h_aee6054f4ab98bc8dbeaac41e2fe329d7}
+
+
+calls read\+Identify\+Answers and removes node that are not active from the list 
+
+this may be done in a thread 

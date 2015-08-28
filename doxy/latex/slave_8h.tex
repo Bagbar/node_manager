@@ -1,0 +1,92 @@
+\hypertarget{slave_8h}{}\section{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/slave.h File Reference}
+\label{slave_8h}\index{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/slave.\+h@{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/slave.\+h}}
+{\ttfamily \#include $<$stdio.\+h$>$}\\*
+{\ttfamily \#include $<$stdlib.\+h$>$}\\*
+{\ttfamily \#include $<$sys/socket.\+h$>$}\\*
+{\ttfamily \#include $<$sys/types.\+h$>$}\\*
+{\ttfamily \#include $<$netinet/in.\+h$>$}\\*
+{\ttfamily \#include $<$netinet/ip.\+h$>$}\\*
+{\ttfamily \#include $<$arpa/inet.\+h$>$}\\*
+{\ttfamily \#include $<$unistd.\+h$>$}\\*
+{\ttfamily \#include $<$sys/fcntl.\+h$>$}\\*
+{\ttfamily \#include \char`\"{}basics.\+h\char`\"{}}\\*
+Include dependency graph for slave.\+h\+:
+% FIG 0
+This graph shows which files directly or indirectly include this file\+:
+% FIG 1
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structrecv__info}{recv\+\_\+info}
+\item 
+struct \hyperlink{structrecv__file}{recv\+\_\+file}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void $\ast$ \hyperlink{slave_8h_a9cbbc6f0ff4224878a6077f0b78eec45}{slave\+\_\+main} (void $\ast$args\+\_\+struct)
+\begin{DoxyCompactList}\small\item\em network I/\+O function for the control communication with the master \end{DoxyCompactList}\item 
+int \hyperlink{slave_8h_ab8d784cd79cef2e39490cbe8ce943343}{elect\+\_\+master} ()
+\item 
+void \hyperlink{slave_8h_a4be263874e2434f23c9b3889e164295c}{recv\+Master\+Control\+Msg} (struct \hyperlink{structslave__args}{slave\+\_\+args} $\ast$slave\+Args\+\_\+ptr, int recv\+Mast\+\_\+sock, int elect\+Recv\+\_\+sock)
+\item 
+void $\ast$ \hyperlink{slave_8h_a85d7c6ad9fe7dd3d7cc734f2b336b371}{receive\+\_\+info} (void $\ast$transfer\+\_\+args)
+\item 
+void $\ast$ \hyperlink{slave_8h_a29d26833a534843230ba0065922b2d78}{receive\+\_\+file} (void $\ast$recv\+\_\+file\+\_\+args)
+\item 
+void $\ast$ \hyperlink{slave_8h_a6b30701db96d76a3594c493fccbfd9e9}{execute\+\_\+work} (void $\ast$args)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{slave_8h_ab8d784cd79cef2e39490cbe8ce943343}{}\index{slave.\+h@{slave.\+h}!elect\+\_\+master@{elect\+\_\+master}}
+\index{elect\+\_\+master@{elect\+\_\+master}!slave.\+h@{slave.\+h}}
+\subsubsection[{elect\+\_\+master}]{\setlength{\rightskip}{0pt plus 5cm}int elect\+\_\+master (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{slave_8h_ab8d784cd79cef2e39490cbe8ce943343}
+\hypertarget{slave_8h_a6b30701db96d76a3594c493fccbfd9e9}{}\index{slave.\+h@{slave.\+h}!execute\+\_\+work@{execute\+\_\+work}}
+\index{execute\+\_\+work@{execute\+\_\+work}!slave.\+h@{slave.\+h}}
+\subsubsection[{execute\+\_\+work}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ execute\+\_\+work (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{args}
+\end{DoxyParamCaption}
+)}\label{slave_8h_a6b30701db96d76a3594c493fccbfd9e9}
+\hypertarget{slave_8h_a29d26833a534843230ba0065922b2d78}{}\index{slave.\+h@{slave.\+h}!receive\+\_\+file@{receive\+\_\+file}}
+\index{receive\+\_\+file@{receive\+\_\+file}!slave.\+h@{slave.\+h}}
+\subsubsection[{receive\+\_\+file}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ receive\+\_\+file (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{recv\+\_\+file\+\_\+args}
+\end{DoxyParamCaption}
+)}\label{slave_8h_a29d26833a534843230ba0065922b2d78}
+\hypertarget{slave_8h_a85d7c6ad9fe7dd3d7cc734f2b336b371}{}\index{slave.\+h@{slave.\+h}!receive\+\_\+info@{receive\+\_\+info}}
+\index{receive\+\_\+info@{receive\+\_\+info}!slave.\+h@{slave.\+h}}
+\subsubsection[{receive\+\_\+info}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ receive\+\_\+info (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{transfer\+\_\+args}
+\end{DoxyParamCaption}
+)}\label{slave_8h_a85d7c6ad9fe7dd3d7cc734f2b336b371}
+\hypertarget{slave_8h_a4be263874e2434f23c9b3889e164295c}{}\index{slave.\+h@{slave.\+h}!recv\+Master\+Control\+Msg@{recv\+Master\+Control\+Msg}}
+\index{recv\+Master\+Control\+Msg@{recv\+Master\+Control\+Msg}!slave.\+h@{slave.\+h}}
+\subsubsection[{recv\+Master\+Control\+Msg}]{\setlength{\rightskip}{0pt plus 5cm}void recv\+Master\+Control\+Msg (
+\begin{DoxyParamCaption}
+\item[{struct {\bf slave\+\_\+args} $\ast$}]{slave\+Args\+\_\+ptr, }
+\item[{int}]{recv\+Mast\+\_\+sock, }
+\item[{int}]{elect\+Recv\+\_\+sock}
+\end{DoxyParamCaption}
+)}\label{slave_8h_a4be263874e2434f23c9b3889e164295c}
+\hypertarget{slave_8h_a9cbbc6f0ff4224878a6077f0b78eec45}{}\index{slave.\+h@{slave.\+h}!slave\+\_\+main@{slave\+\_\+main}}
+\index{slave\+\_\+main@{slave\+\_\+main}!slave.\+h@{slave.\+h}}
+\subsubsection[{slave\+\_\+main}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ slave\+\_\+main (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{args\+\_\+struct}
+\end{DoxyParamCaption}
+)}\label{slave_8h_a9cbbc6f0ff4224878a6077f0b78eec45}
+
+
+network I/\+O function for the control communication with the master 
+
+identify self \+: send your Type to caller
+
+keepalive 

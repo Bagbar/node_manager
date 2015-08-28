@@ -1,0 +1,100 @@
+\hypertarget{_x_m_l_8c}{}\section{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/\+X\+M\+L.c File Reference}
+\label{_x_m_l_8c}\index{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/\+X\+M\+L.\+c@{/home/xubuntu/git/node\+\_\+manager/slave\+\_\+background\+\_\+process/\+X\+M\+L.\+c}}
+{\ttfamily \#include \char`\"{}X\+M\+L.\+h\char`\"{}}\\*
+Include dependency graph for X\+M\+L.\+c\+:
+% FIG 0
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int $\ast$ \hyperlink{_x_m_l_8c_a4bc2924ab47e1233da1b98eadeb9ce82}{X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight} (xml\+Doc\+Ptr doc)
+\begin{DoxyCompactList}\small\item\em Gets the total weight and the minimum amount of nodes needed in an array. \end{DoxyCompactList}\item 
+void \hyperlink{_x_m_l_8c_a0b6f3675567e6e0eb4b2fe14acfa25ea}{get\+\_\+id} (xml\+Doc\+Ptr doc, xml\+Node\+Ptr cur)
+\item 
+xml\+Doc\+Ptr \hyperlink{_x_m_l_8c_aad431a582df1103d82450e2d9d46cf46}{build\+Complete\+X\+M\+L} (xml\+Doc\+Ptr doc\+Old, struct \hyperlink{structcluster__info}{cluster\+\_\+info} $\ast$cluster\+Info\+\_\+ptr, int $\ast$values)
+\begin{DoxyCompactList}\small\item\em Creates a new xml\+Doc which contains all data for the master. \end{DoxyCompactList}\item 
+xml\+Doc\+Ptr \hyperlink{_x_m_l_8c_ad72b7b5bcbb7013a88e33fb516db587d}{X\+M\+Lread} (char $\ast$filename)
+\item 
+void \hyperlink{_x_m_l_8c_a38d7e2a1a81a02b3e466870b87a01b04}{X\+M\+L\+Cleanup} (xml\+Doc\+Ptr doc, xml\+Doc\+Ptr doc2, int $\ast$values)
+\begin{DoxyCompactList}\small\item\em clears up all the Pointers used in X\+M\+L procession \end{DoxyCompactList}\item 
+int \hyperlink{_x_m_l_8c_a57cfe8b32f955d61d2d71d40cec0a3d9}{X\+M\+Lsearch\+Element\+And\+Get\+Int} (xml\+Node\+Ptr cur, xml\+Char $\ast$Element\+Name)
+\begin{DoxyCompactList}\small\item\em searches through all children of an element for a child with the given name \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \hyperlink{_x_m_l_8c_a7459d5eb9c5b5637f85abd866739ce4b}{own\+I\+P}
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{_x_m_l_8c_aad431a582df1103d82450e2d9d46cf46}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!build\+Complete\+X\+M\+L@{build\+Complete\+X\+M\+L}}
+\index{build\+Complete\+X\+M\+L@{build\+Complete\+X\+M\+L}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{build\+Complete\+X\+M\+L}]{\setlength{\rightskip}{0pt plus 5cm}xml\+Doc\+Ptr build\+Complete\+X\+M\+L (
+\begin{DoxyParamCaption}
+\item[{xml\+Doc\+Ptr}]{doc\+Old, }
+\item[{struct {\bf cluster\+\_\+info} $\ast$}]{cluster\+Info\+\_\+ptr, }
+\item[{int $\ast$}]{values}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_aad431a582df1103d82450e2d9d46cf46}
+
+
+Creates a new xml\+Doc which contains all data for the master. 
+
+Generates an element for every node that will be in use, copies the relevant data from the old\+Doc and adds the own I\+P and target I\+P to the info so it can be used to make the data distribution
+
+returns a pointer that has to be freed \hypertarget{_x_m_l_8c_a0b6f3675567e6e0eb4b2fe14acfa25ea}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!get\+\_\+id@{get\+\_\+id}}
+\index{get\+\_\+id@{get\+\_\+id}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{get\+\_\+id}]{\setlength{\rightskip}{0pt plus 5cm}void get\+\_\+id (
+\begin{DoxyParamCaption}
+\item[{xml\+Doc\+Ptr}]{doc, }
+\item[{xml\+Node\+Ptr}]{cur}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_a0b6f3675567e6e0eb4b2fe14acfa25ea}
+\hypertarget{_x_m_l_8c_a38d7e2a1a81a02b3e466870b87a01b04}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!X\+M\+L\+Cleanup@{X\+M\+L\+Cleanup}}
+\index{X\+M\+L\+Cleanup@{X\+M\+L\+Cleanup}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{X\+M\+L\+Cleanup}]{\setlength{\rightskip}{0pt plus 5cm}void X\+M\+L\+Cleanup (
+\begin{DoxyParamCaption}
+\item[{xml\+Doc\+Ptr}]{doc, }
+\item[{xml\+Doc\+Ptr}]{doc2, }
+\item[{int $\ast$}]{values}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_a38d7e2a1a81a02b3e466870b87a01b04}
+
+
+clears up all the Pointers used in X\+M\+L procession 
+
+this is a rather specific function for a personal usecase \hypertarget{_x_m_l_8c_a4bc2924ab47e1233da1b98eadeb9ce82}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight@{X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight}}
+\index{X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight@{X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight}]{\setlength{\rightskip}{0pt plus 5cm}int$\ast$ X\+M\+L\+Get\+Min\+Node\+And\+Total\+Weight (
+\begin{DoxyParamCaption}
+\item[{xml\+Doc\+Ptr}]{doc}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_a4bc2924ab47e1233da1b98eadeb9ce82}
+
+
+Gets the total weight and the minimum amount of nodes needed in an array. 
+
+returns a pointer with the elements for weight and minimum nodes needed can be accessed with W\+E\+I\+G\+H\+T\+\_\+\+S\+H\+I\+F\+T and M\+I\+N\+\_\+\+S\+H\+I\+F\+T \hypertarget{_x_m_l_8c_ad72b7b5bcbb7013a88e33fb516db587d}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!X\+M\+Lread@{X\+M\+Lread}}
+\index{X\+M\+Lread@{X\+M\+Lread}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{X\+M\+Lread}]{\setlength{\rightskip}{0pt plus 5cm}xml\+Doc\+Ptr X\+M\+Lread (
+\begin{DoxyParamCaption}
+\item[{char $\ast$}]{filename}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_ad72b7b5bcbb7013a88e33fb516db587d}
+\hypertarget{_x_m_l_8c_a57cfe8b32f955d61d2d71d40cec0a3d9}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!X\+M\+Lsearch\+Element\+And\+Get\+Int@{X\+M\+Lsearch\+Element\+And\+Get\+Int}}
+\index{X\+M\+Lsearch\+Element\+And\+Get\+Int@{X\+M\+Lsearch\+Element\+And\+Get\+Int}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{X\+M\+Lsearch\+Element\+And\+Get\+Int}]{\setlength{\rightskip}{0pt plus 5cm}int X\+M\+Lsearch\+Element\+And\+Get\+Int (
+\begin{DoxyParamCaption}
+\item[{xml\+Node\+Ptr}]{cur, }
+\item[{xml\+Char $\ast$}]{Element\+Name}
+\end{DoxyParamCaption}
+)}\label{_x_m_l_8c_a57cfe8b32f955d61d2d71d40cec0a3d9}
+
+
+searches through all children of an element for a child with the given name 
+
+does not search for grandchildren and beyond returns -\/1 if element is not found 
+
+\subsection{Variable Documentation}
+\hypertarget{_x_m_l_8c_a7459d5eb9c5b5637f85abd866739ce4b}{}\index{X\+M\+L.\+c@{X\+M\+L.\+c}!own\+I\+P@{own\+I\+P}}
+\index{own\+I\+P@{own\+I\+P}!X\+M\+L.\+c@{X\+M\+L.\+c}}
+\subsubsection[{own\+I\+P}]{\setlength{\rightskip}{0pt plus 5cm}uint32\+\_\+t own\+I\+P}\label{_x_m_l_8c_a7459d5eb9c5b5637f85abd866739ce4b}

@@ -1,0 +1,10 @@
+digraph "/home/xubuntu/git/node_manager/slave_background_process/slave.h"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/home/xubuntu/git/node\l_manager/slave_background\l_process/slave.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/home/xubuntu/git/node\l_manager/slave_background\l_process/main.c",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$main_8c.html"];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/home/xubuntu/git/node\l_manager/slave_background\l_process/slave.c",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$slave_8c.html"];
+}

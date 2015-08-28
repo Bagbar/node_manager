@@ -21,11 +21,10 @@
 #define MIN_SHIFT 0
 #define WEIGHT_SHIFT 1
 
-/** \brief Gets  the total weight of all parallel blocks and checks if there are enough nodes available
+/** \brief Gets  the total weight and the minimum amount of nodes needed in an array
  *
- * if no errors occurred it returns the total weight
- * 0 = no parallel blocks
- * -1 = not enough nodes available
+ * returns a pointer with the elements for weight and minimum nodes needed can be accessed with WEIGHT_SHIFT and MIN_SHIFT
+ *
  */
 int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc);
 
@@ -34,20 +33,33 @@ struct id_weight{
 	int weight;
 };
 
-/**
- *
- */
+
 xmlDocPtr XMLread(char *filename);
 
 /**\brief clears up all the Pointers used in XML procession
  *
+ *	this is a rather specific function for a personal usecase
  */
 void XMLCleanup(xmlDocPtr doc,xmlDocPtr doc2, int *values);
 
 static void print_element_names(xmlNode * a_node);
 
+
+/** \brief Creates a new xmlDoc which contains all data for the master
+ *
+ *	Generates an element for every node that will be in use, copies the relevant data from the oldDoc
+ *	and adds the own IP and target IP to the info so it can be used to make the data distribution
+ *
+ *	returns a pointer that has to be freed
+ */
 xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_ptr,
 		int *values);
+
+/** \brief searches through all children of an element for a child with the given name
+ *
+ * 	does not search for grandchildren and beyond
+ * 	returns -1 if element is not found
+ */
 int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName);
 
 #endif /* XML_H_ */

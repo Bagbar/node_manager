@@ -1,34 +1,48 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <nodes>
   <node id="1">
-    <bitstream>bit1</bitstream>
-    <destination>2</destination>
-    <work>work1</work>
+    <destination>3</destination>
+    <files>
+      <bitstream>bit1</bitstream>
+      <work>work1</work>
+      <script>1.sh</script>
+    </files>
   </node>
   <node id="2">
-    <work>work2</work>
-    <destination>3</destination>
-    <bitstream>bit2</bitstream>
+    <destination>4</destination>
+    <files>
+      <work>work2</work>
+      <bitstream>bit2</bitstream>
+      <script>2.sh</script>
+    </files>
   </node>
   <parallel id="3">
-    <work>parallel_work</work>
-    <bitstream>parallel_bit</bitstream>
-    <destination>4</destination>
     <min>1</min>
     <max>1000</max>
     <weight>1</weight>
+    <destination>2</destination>
+    <files>
+      <bitstream>parallel_bit</bitstream>
+      <work>parallel_work</work>
+      <script>3.sh</script>
+    </files>
   </parallel>
-<parallel id="4">
-    <work>parallel_work2</work>
-    <bitstream>parallel_bit2</bitstream>
+  <master id="master">
+    <destination>1</destination>
+    <files>
+      <work>master_work</work>
+      <script>master.sh</script>
+    </files>
+  </master>
+  <parallel id="4">
     <destination>master</destination>
     <min>2</min>
     <max>1000</max>
     <weight>2</weight>
+    <files>
+      <bitstream>parallel_bit2</bitstream>
+      <work>parallel_work2</work>
+      <script>4.sh</script>
+    </files>
   </parallel>
-  <master id="master">
-    <destination>1</destination>
-    <work>master_work</work>
-    <bitstream />
-  </master>
 </nodes>
