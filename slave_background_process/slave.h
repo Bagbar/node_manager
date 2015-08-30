@@ -33,7 +33,9 @@ struct recv_file
 };
 
 void *slave_main(void *args_struct);
+
 int elect_master();
+
 void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
 		int electRecv_sock);
 

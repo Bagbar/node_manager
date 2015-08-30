@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<Nodes><IP_286331153 id="1">
+    <destination>3</destination>
+    <files>
+      <bitstream>bit1</bitstream>
+      <work>work1</work>
+      <script>1.sh</script>
+    </files>
+  <dest_IP>286331155</dest_IP><dest_IP>286331156</dest_IP></IP_286331153><IP_286331154 id="2">
+    <destination>4</destination>
+    <files>
+      <work>work2</work>
+      <bitstream>bit2</bitstream>
+      <script>2.sh</script>
+    </files>
+  <dest_IP>286331157</dest_IP><dest_IP>286331158</dest_IP><dest_IP>286331152</dest_IP><dest_IP>269488144</dest_IP></IP_286331154><IP_286331155 id="3" part="0">
+    <min>1</min>
+    <max>1000</max>
+    <weight>1</weight>
+    <destination>2</destination>
+    <files>
+      <bitstream>parallel_bit</bitstream>
+      <work>parallel_work</work>
+      <script>3.sh</script>
+    </files>
+  <dest_IP>286331154</dest_IP></IP_286331155><IP_286331156 id="3" part="1">
+    <min>1</min>
+    <max>1000</max>
+    <weight>1</weight>
+    <destination>2</destination>
+    <files>
+      <bitstream>parallel_bit</bitstream>
+      <work>parallel_work</work>
+      <script>3.sh</script>
+    </files>
+  <dest_IP>286331154</dest_IP></IP_286331156><IP_286331157 id="4" part="0">
+    <destination>master</destination>
+    <min>2</min>
+    <max>1000</max>
+    <weight>2</weight>
+    <files>
+      <bitstream>parallel_bit2</bitstream>
+      <work>parallel_work2</work>
+      <script>4.sh</script>
+    </files>
+  <dest_IP>2289412288</dest_IP></IP_286331157><IP_286331158 id="4" part="1">
+    <destination>master</destination>
+    <min>2</min>
+    <max>1000</max>
+    <weight>2</weight>
+    <files>
+      <bitstream>parallel_bit2</bitstream>
+      <work>parallel_work2</work>
+      <script>4.sh</script>
+    </files>
+  <dest_IP>2289412288</dest_IP></IP_286331158><IP_286331152 id="4" part="2">
+    <destination>master</destination>
+    <min>2</min>
+    <max>1000</max>
+    <weight>2</weight>
+    <files>
+      <bitstream>parallel_bit2</bitstream>
+      <work>parallel_work2</work>
+      <script>4.sh</script>
+    </files>
+  <dest_IP>2289412288</dest_IP></IP_286331152><IP_2289412288 id="master">
+    <destination>1</destination>
+    <files>
+      <work>master_work</work>
+      <script>master.sh</script>
+    </files>
+  <dest_IP>286331153</dest_IP></IP_2289412288><IP_269488144 id="4" part="3">
+    <destination>master</destination>
+    <min>2</min>
+    <max>1000</max>
+    <weight>2</weight>
+    <files>
+      <bitstream>parallel_bit2</bitstream>
+      <work>parallel_work2</work>
+      <script>4.sh</script>
+    </files>
+  <dest_IP>2289412288</dest_IP></IP_269488144></Nodes>
