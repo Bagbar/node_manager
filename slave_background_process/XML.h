@@ -50,6 +50,8 @@ static void print_element_names(xmlNode * a_node);
  *	Generates an element for every node that will be in use, copies the relevant data from the oldDoc
  *	and adds the own IP and target IP to the info so it can be used to make the data distribution
  *
+ *	Is not thread-safe all accesses to clusterInfo are without mutex.
+ *
  *	returns a pointer that has to be freed
  */
 xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_ptr,
@@ -57,7 +59,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 
 /** \brief searches through all children of an element for a child with the given name
  *
- * 	does not search for grandchildren and beyond
+ * 	does not search for beyond children
  * 	returns -1 if element is not found
  */
 int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName);

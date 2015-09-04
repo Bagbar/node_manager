@@ -29,9 +29,7 @@ void *slave_main(void *args_ptr)
 	memset(recvBuff, '0', BUFFERSIZE);
 
 	struct recv_info recv_info_sct;
-	recv_info_sct.bit_size = 0;
-	recv_info_sct.driver_size = 0;
-	recv_info_sct.work_size = 0;
+	recv_info_sct.archive_size = 0;
 	//trans_info_sct.status_okay = 0;
 
 	pthread_t recv_info_thread;
@@ -296,24 +294,24 @@ void *receive_file(void * recv_file_args)
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', sizeof(recvBuff));
 
-	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int recv_sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (return_socket < 0)
+	if (recv_sock < 0)
 		printf("socketerror:%s\n", strerror(errno));
 
 	struct sockaddr_in addr, client;
 	socklen_t len;
 	fillSockaddrAny(&addr, TCP_RECV_ARCHIVE_PORT);
 
-	int return_bind = bind(return_socket, (struct sockaddr*) &addr,
+	int return_bind = bind(recv_sock, (struct sockaddr*) &addr,
 			sizeof(addr));
 	if (return_bind < 0)
 		printf("binderror:%s\n", strerror(errno));
 
-	listen(return_socket, 1);
+	listen(recv_sock, 1);
 	do
 	{
-		int return_accept = accept(return_socket, (struct sockaddr*) &client,
+		int return_accept = accept(recv_sock, (struct sockaddr*) &client,
 				&len);
 		if (return_accept < 0)
 			printf("accepterror:%s\n", strerror(errno));

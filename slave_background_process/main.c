@@ -86,7 +86,7 @@ int main()
 	//create UDP-Socket Server
 	if ((mastBroad_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		critErr("listen:send_master_socket=");
+		critErr("main:send_master_socket=");
 	}
 	fcntl(mastBroad_sock, F_SETFL, O_NONBLOCK);
 	int broadcastEnable = 1;

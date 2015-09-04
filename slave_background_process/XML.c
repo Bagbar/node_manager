@@ -134,7 +134,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 
 	printf("new Doc generated\n");
 	char IP_str[11];
-	pthread_mutex_lock(&clusterInfo_ptr->mtx);
+	//pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	restNodes_i = clusterInfo_ptr->num_nodes_i - values[MIN_SHIFT];
 	printf("numnodes = %d\n", clusterInfo_ptr->num_nodes_i);
 
@@ -158,7 +158,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		}
 	}
 	printf("forloop finished \n");
-	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
+	//pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 	curNew = rootNew->children;
 	if (curNew == NULL)
 	{
@@ -260,8 +260,8 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		curOld = curOld->next;
 	}
 	printf("saving file");
-		xmlSaveFile("newfile.xml", docNew);
-		xmlDocPtr inputXML = xmlParseFile("newfile.xml");
+		xmlSaveFile("intermediate.xml", docNew);
+		xmlDocPtr inputXML = xmlParseFile("intermediate.xml");
 		xmlNodePtr root =  xmlDocGetRootElement(inputXML);
 	curNew = root->children;
 
@@ -304,8 +304,8 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	}
 	//print_element_names(rootNew);
 
-	printf("saving newnewfile");
-	xmlSaveFile("newnewfile.xml", inputXML);
+	printf("saving newfile");
+	xmlSaveFile("newfile.xml", inputXML);
 	xmlFree(docNew);
 	return inputXML;
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>slave_background_process</name>
+	<name>cluster_control</name>
 	<comment></comment>
 	<projects>
 	</projects>

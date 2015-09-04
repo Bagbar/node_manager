@@ -16,8 +16,9 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "XML.h"
+#include <pthread.h>
 
+#include "XML.h"
 #include "basics.h"
 
 
@@ -82,5 +83,9 @@ void *send_file(void *send_file_args);
 /**starts the distrubution and work
  * returns a pointer to an int that has to be freed.
  */
-void* start(void *start_args);
+void * start(void *start_args);
+
+void * getProgram(void * args);
+
+void * distributeData(void * args);
 #endif /* MASTER_H_ */

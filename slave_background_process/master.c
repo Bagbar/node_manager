@@ -125,8 +125,9 @@ int master_control(int mastBroad_sock)
 {
 
 	printf("I am master\n");
-	char keep_alive_c = 'k', identify_node_c = 'i';
+	char keep_alive_c = KEEP_ALIVE_SIGNAL, identify_node_c = IDENTIFY_SIGNAL;
 
+	pthread_t listenForData_thread, sendDataToSlaves_thread;
 	int master_i = 1, identify_counter_i = 1;
 
 	struct cluster_info clusterInfo_sct;
@@ -144,6 +145,20 @@ int master_control(int mastBroad_sock)
 	clusterInfo_sct.num_nodes_i = 0;
 	clusterInfo_sct.size_i = EST_NUM_BOARD;
 
+	if (pthread_create(&listenForData_thread, NULL, getProgram,
+				NULL))
+		{
+			critErr("pthread_create(getProgram)=");
+		}
+
+	//TODO make parallel in the future
+	if (pthread_create(&sendDataToSlaves_thread, NULL, distributeData,
+				NULL))
+		{
+			critErr("pthread_create(slave)=");
+		}
+
+
 
 	struct sockaddr_in broad_addr, recv_addr;
 		socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
@@ -152,28 +167,29 @@ int master_control(int mastBroad_sock)
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
 
-	sendto(mastBroad_sock, &identify_node_c, 1, 0,
+	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
 	readIdentifyAnswers(mastBroad_sock, &clusterInfo_sct, 1);
 
-	do
+	 while (master_i)
 	{
 		if (identify_counter_i == 0)
 		{
-			sendto(mastBroad_sock, &identify_node_c, 1, 0,
+			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
 			updateClusterInfo(&clusterInfo_sct, mastBroad_sock);
 		}
 		else
 		{
 
-			sendto(mastBroad_sock, &keep_alive_c, 1, 0,
+			sendto(mastBroad_sock, &keep_alive_c, sizeof keep_alive_c, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
 		}
+
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
 		printf("identify_counter=%d\n", identify_counter_i);
-	} while (master_i);
+	}
 	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
 }
@@ -287,7 +303,8 @@ void *send_file(void *send_file_args)
 			result = fread(sendBuff, 1, BUFFERSIZE, pFile);
 			if (result != BUFFERSIZE && feof(pFile) == 0)
 			{
-				critErr("master:send_file:Reading error");
+				printf("master:send_file:Reading error");
+				exit(-1);
 			}
 			return_send = send(return_socket, sendBuff, result, 0);
 			if (return_send < 0)
@@ -341,15 +358,87 @@ void* start(void *start_args)
 			return return_ptr;
 		}
 		else
-		{
+		{ outputXML = buildCompleteXML(inputXML,clusterInfo_ptr,values);
 			pthread_mutex_unlock(&clusterInfo_ptr->mtx);
-
 		}
 
 
 	 XMLCleanup(inputXML,outputXML,values);
 }
 
+void * getProgram(void * args)
+{
+	size_t file_size;
+	int recvReturn_i;
+	FILE * pFile;
+	int waitForBroadcast_sock, openConnection_sock;
+	char listenBuff[10], recvBuffer[BUFFERSIZE], ack[4]="ack";
 
 
 
+		struct sockaddr_in listen_addr, connect_addr;
+		socklen_t listen_len = sizeof listen_addr, connect_len = sizeof connect_addr;
+
+		if ((waitForBroadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+			{
+				critErr("master:getProgram:wait_socket=");
+			}
+
+		if ((openConnection_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+					{
+						critErr("master:getProgram:connect_socket=");
+					}
+		fillSockaddrAny(&listen_addr,UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER);
+		if ((bind(waitForBroadcast_sock, (struct sockaddr*) &listen_addr,
+					sizeof(listen_addr))) < 0)
+			{
+				critErr("master:getProgram:bind elect_recv_sock:");
+			}
+
+		recvReturn_i = recvfrom(waitForBroadcast_sock, &listenBuff[0],sizeof listenBuff, 0,
+				(struct sockaddr*) &connect_addr, &connect_len);
+		if(!strcmp(listenBuff,"fetch"))
+		{
+		sendto(waitForBroadcast_sock,&ack,sizeof ack,0,(struct sockaddr*) &connect_addr, connect_len);
+
+
+			int return_connect = connect(openConnection_sock, (struct sockaddr*) &connect_addr,
+						connect_len);
+				if (return_connect < 0)
+					critErr("master: getProgram: connecterror");
+					pFile = fopen("data.tar.gz", "wb");
+						if (pFile == NULL)
+						{
+							fputs("File error", stderr);
+							exit(1);
+						}
+
+						do
+						{
+							recvReturn_i = recv(openConnection_sock, recvBuffer, BUFFERSIZE, 0);
+							if (recvReturn_i < 0)
+								printf("recverror:%s\n", strerror(errno));
+							else
+								printf("recv data = %d", recvReturn_i);
+
+							fwrite(recvBuffer, 1, recvReturn_i, pFile);
+							file_size += recvReturn_i;
+						} while (recvReturn_i == BUFFERSIZE && feof(pFile) == 0); //TODO maybe change to EOF check
+
+						fclose(pFile);
+
+		}
+		close(waitForBroadcast_sock);
+		close(openConnection_sock);
+	// w8 for broadcast and open tcp connection to sender to fetch the data archive, decompress archive
+	return NULL;
+}
+void * distributeData(void * args)
+{
+	xmlDocPtr doc = args;
+
+
+
+	//go through the XML doc to distribute the data to the nodes in new packed archives
+	return NULL;
+}

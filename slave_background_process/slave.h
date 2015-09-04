@@ -19,17 +19,18 @@
 
 #include "basics.h"
 
+/// argument for receive_info function containing the file size
 struct recv_info
 {
-	size_t work_size, bit_size, driver_size;
+	size_t archive_size;
 //uint8_t status_okay;
 };
-
+/// argument for receive_file function
 struct recv_file
-{
+{ ///the size of the received file
 	size_t recv_size;
+	///the size of the file as stated in receive_info
 	size_t expected_size;
-	int filetype_i;
 };
 
 void *slave_main(void *args_struct);

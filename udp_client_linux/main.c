@@ -20,70 +20,97 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#define UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER 51000
+#define TCP_RECV_ARCHIVE_PORT 50010
 
-int main(void)
+#define BUFFERSIZE 1024
+
+int main(int argc, const char* argv[])
 {
-	int i = 0;
-	char cont = 'y';
-
-	int return_socket = socket(AF_INET, SOCK_DGRAM, 0);
-	if (return_socket < 0)
-		printf("socketerror:%s\n", strerror(errno));
-	int broadcastEnable=1;
-	int ret=setsockopt(return_socket, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
-
-	struct sockaddr_in serv_addr;
-	socklen_t serv_len = sizeof(serv_addr);
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(50506);
-	serv_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-//	if (inet_aton("127.0.0.1", &serv_addr.sin_addr) == 0)
-//	{
-//		fprintf(stderr, "inet_aton() failed\n");
-//		exit(1);
-//	}
-
-
-	char recvBuff[1024];
-	memset(recvBuff, '0', sizeof(recvBuff));
-
-	char sendBuff[1024];
-	memset(sendBuff, '0', sizeof(sendBuff));
-	for (i = 0; i < 2; i++)
-		sendBuff[i] = 'k';
-
-	i=0;
-	do
+	if (argc > 1)
 	{
-		int return_send = (int) sendto(return_socket, sendBuff, 1, 0,
-				(struct sockaddr*) &serv_addr, serv_len);
-		if (return_send < 0)
-			printf("senderror:%s\n", strerror(errno));
-		else
-			printf("send data = %d\t send_symbol=%c\n", return_send,
-					sendBuff[0]);
 
-		int return_recv = (int) recvfrom(return_socket, recvBuff, 1, 0,
-				(struct sockaddr*) &serv_addr, &serv_len);
-		if (return_recv < 0)
-			printf("recverror:%s\n", strerror(errno));
-		else
-			printf("recv data = %d\t recv_symb=%c\n", return_recv, recvBuff[0]);
-		printf("continue?y/n\n");
-		scanf("%c", &cont);
-		i++;
-		if(cont=='n')
-			i=i+20;
+		size_t file_size;
+		int recv_return_i, returnSend_i, bytesRead_i;
+		FILE * pFile;
+		int broadcast_sock, transfer_sock, recvReturn_i;
+		char broadSendBuff[10] = "fetch", broadRecvBuff[100], bytesRead_i_i[BUFFERSIZE];
 
-	} while (i<20);
+		pFile = fopen(argv[1], "rb");
+		if (pFile == NULL)
+		{
+			fputs("File error", stderr);
+			exit(-1);
+		}
 
-	/*int return_recv = recv(return_accept,&recvBuff,10,0);
-	 if (return_recv<0) printf("recverror:%s\n",strerror(errno));
-	 else printf("recv data = %d",return_recv);*/
+		struct sockaddr_in broadcast_addr, connect_addr, master_addr;
+		socklen_t broadcast_len = sizeof broadcast_addr, connect_len = sizeof connect_addr, master_len;
 
-	for (i = 0; i < 10; i++)
-		printf("%c,%c\n", sendBuff[i], recvBuff[i]);
+		if ((broadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+		{
+			fclose(pFile);
+			fputs("broadcast_socket=", strerror);
+						exit(-1);
+		}
 
-	close(return_socket);
-	return 0;
+		if ((transfer_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		{
+			fclose(pFile);
+			fputs("transfer_socket=", strerror);
+			exit(-1);
+		}
+
+		broadcast_addr.sin_family = AF_INET;
+		broadcast_addr.sin_port = htons(UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER);
+		broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+		sendto(broadcast_sock, &broadSendBuff, sizeof broadSendBuff, 6,
+				(struct sockaddr*) broadcast_addr, broadcast_len);
+
+		recvReturn_i = recvfrom(broadcast_sock, &broadRecvBuff[0], 10, 0,
+				(struct sockaddr*) master_addr, &master_len);
+
+		connect_addr.sin_family = AF_INET;
+		connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
+		connect_addr.sin_addr.s_addr = master_addr.sin_addr.s_addr;
+
+		int return_bind = bind(transfer_sock, (struct sockaddr*) &connect_addr, connect_len);
+		listen(transfer_sock, 1);
+
+		if (!strcmp(broadRecvBuff, "ack"))
+		{
+			int return_accept = accept(transfer_sock,NULL,NULL);
+			if (return_accept < 0)
+				printf("accepterror:%s\n", strerror(errno));
+
+
+			do{
+			bytesRead_i = fread(bytesRead_i_i, 1, BUFFERSIZE, pFile);
+				if (bytesRead_i != BUFFERSIZE && feof(pFile)==0)
+				{
+					fputs("Reading error", stderr);
+					exit(3);
+				}
+				returnSend_i = send(return_accept, bytesRead_i_i, bytesRead_i, 0);
+					if (returnSend_i < 0)
+						printf("senderror:%s", strerror(errno));
+					else
+						printf("send data = %d\n", returnSend_i);
+				/* the whole file is now loaded in the memory buffer. */
+				}while(feof(pFile)==0);
+				// terminate
+				fclose(pFile);
+
+		}
+		close(broadcast_sock);
+		close(transfer_sock);
+		// w8 for broadcast and open tcp connection to sender to fetch the data archive, decompress archive
+		return 0;
+	}
+
+	else
+	{
+		printf("no file declared");
+		return -1;
+	}
 }

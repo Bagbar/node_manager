@@ -28,6 +28,9 @@
 #define CHECK_FAILED 1
 #define WORK_THREAD_CANCELED 100
 
+#define KEEP_ALIVE_SIGNAL 'k'
+#define IDENTIFY_SIGNAL 'i'
+
 //define the different Boards/controllers priority
 #define SERVER   0
 #define ZYNQ7000 1
@@ -50,6 +53,8 @@
 #define UDP_NODE_LISTEN_PORT 50001 //used for general commands to Nodes
 #define UDP_N2M_PORT 50002 //slave to master
 #define UDP_ELECT_M_PORT 50003
+#define UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER 51000
+#define TCP_GET_DATA 51001
 #define TCP_RECV_ARCHIVE_PORT 50010 //port for the archive with all needed data
 #define TCP_RECV_INFO_PORT 50011 //used for sending  administrative data to slaves
 #define TCP_RECV_DATA_PORT 40001 //receive the data that has to be processed
@@ -59,14 +64,14 @@
 //everyone with the same number shall be in the same subgroup (not active)
 #define CLUSTERGROUP 0
 
-// struct for storing a variable with a corresponding mutex
+///struct for storing a variable with a corresponding mutex
 struct var_mtx
 {
 	volatile int var;
 	pthread_mutex_t mtx;
 };
 
-//struct for thread creating arguments master_ptr is also used with the mutex
+///struct for thread creating arguments master_ptr is also used with the mutex
 struct slave_args
 {
 	struct var_mtx *timeout_count;
@@ -74,23 +79,31 @@ struct slave_args
 	uint8_t *subgroup_ptr;
 };
 
+/// struct for list of nodes
 struct node_data
 {
+	///IP in networkorder
 	uint32_t ip_u32;
+	/// type number according to defines
 	uint8_t type_u8;
+	/// last alive counter number when it answered
 	uint8_t lastAlive_u8;
+	/// does it have a job running
 	uint8_t nowActive_u8;
+	/// subgroup number(not used at the moment)
 	uint8_t group_u8;
 };
 
 struct cluster_info
 {
-//	uint32_t *ip_ptr;
-//	uint8_t *type_ptr;
 	//uint16_t *connection_values_ptr;
+	/// list of the nodes
 	struct node_data *node_data_list_ptr;
+	/// amount of nodes for which memory is allocated
 	int size_i;
+	///actual number of nodes stored
 	int num_nodes_i;
+	/// incrementing number for comparison with lastAlive
 	uint8_t alive_count_u8;
 	pthread_mutex_t mtx;
 };
@@ -124,7 +137,7 @@ void getMAC(uint8_t *mac);
  */
 uint64_t MACtoDecimal(uint8_t *mac);
 
-/*\ brief compare function for sorting algorithm
+/**\ brief compare function for sorting algorithm
  *
  *  conforms to the compare standard format
  */
