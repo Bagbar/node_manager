@@ -28,10 +28,10 @@ int main()
 	char filename[10] = "test.xml";
 	getMAC(mac);
 	ownIP = getIP();
-	getProgram(NULL);
-	return 0;
+	//getProgram(NULL);
+	//return 0;
 
-	/*xmlDocPtr inputXML = xmlParseFile(filename);
+	xmlDocPtr inputXML = xmlParseFile(filename);
 
 	struct cluster_info clusterInfo_sct;
 	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
@@ -59,7 +59,7 @@ int main()
 	free(clusterInfo_sct.node_data_list_ptr);
 	XMLCleanup(inputXML,outputXML,nodeAndWeight);
 
-	return 0;*/
+	return 0;
 	int master_i = 0; // 0=no, 1=yes
 	uint8_t subgroup_u8 = CLUSTERGROUP;
 	uint64_t MAC = MACtoDecimal(mac);

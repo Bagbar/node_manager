@@ -150,3 +150,8 @@ char* networkToDottedIP(uint32_t ip);
 
 // BASICS_H_INCLUDED
 #endif
+
+/** \brief
+ *
+ */
+long int fsize(char* file);

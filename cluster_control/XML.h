@@ -64,4 +64,14 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
  */
 int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName);
 
+/** \brief scans the doc for nodes without content and removes them
+ *
+ * this is used to make sure that distributeData just has to skim through the doc without further checks
+ */
+void XMLremoveUnusedNodes(xmlDocPtr doc);
+
+/** removes a Node from a Doc by calling xmlUnlinkNode and xmlFreeNode
+ */
+void XMLremoveNode(xmlNodePtr node);
+
 #endif /* XML_H_ */

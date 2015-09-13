@@ -44,38 +44,47 @@ int main(int argc, const char* argv[])
 			fputs("File error", stderr);
 			exit(-1);
 		}
-
+		printf("opened: %s\n",argv[1]);
 		struct sockaddr_in broadcast_addr, connect_addr, master_addr;
 		socklen_t broadcast_len = sizeof broadcast_addr, connect_len = sizeof connect_addr, master_len;
 
 		if ((broadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		{
 			fclose(pFile);
-			fputs("broadcast_socket=", strerror);
+			fputs("broadcast_socket=", stderr);
 						exit(-1);
 		}
 
 		if ((transfer_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		{
 			fclose(pFile);
-			fputs("transfer_socket=", strerror);
+			fputs("transfer_socket=", stderr);
 			exit(-1);
 		}
+		int broadcastEnable = 1;
+		int ret = setsockopt(broadcast_sock, SOL_SOCKET, SO_BROADCAST,
+					&broadcastEnable, sizeof(broadcastEnable));
+			if (ret)
+				fputs("main: couldn't set setsockopt:",stderr);
 
 		broadcast_addr.sin_family = AF_INET;
 		broadcast_addr.sin_port = htons(UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER);
 		broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
-		sendto(broadcast_sock, &broadSendBuff, sizeof broadSendBuff, 6,
+		printf("sending broadcast\n");
+		returnSend_i = sendto(broadcast_sock, &broadSendBuff[0], sizeof broadSendBuff, 0,
 				(struct sockaddr*) &broadcast_addr, broadcast_len);
-
+		printf("sent:%d\n",returnSend_i);
+		if(returnSend_i <0)
+			printf("senderror:%s", strerror(errno));
+		printf("waiting for reply\n");
 		recvReturn_i = recvfrom(broadcast_sock, &broadRecvBuff[0], 10, 0,
 				(struct sockaddr*) &master_addr, &master_len);
-
+		printf("received\n");
 		connect_addr.sin_family = AF_INET;
 		connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
 		connect_addr.sin_addr.s_addr = master_addr.sin_addr.s_addr;
-
+		printf("bind\n");
 		int return_bind = bind(transfer_sock, (struct sockaddr*) &connect_addr, connect_len);
 		listen(transfer_sock, 1);
 

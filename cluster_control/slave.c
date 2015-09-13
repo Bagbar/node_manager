@@ -333,7 +333,7 @@ void *receive_file(void * recv_file_args)
 
 			fwrite(recvBuff, 1, recv_return_i, pFile);
 			file_size += recv_return_i;
-		} while (recv_return_i == BUFFERSIZE && feof(pFile) == 0); //TODO maybe change to EOF check
+		} while (recv_return_i == BUFFERSIZE); //TODO maybe change to EOF check
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;

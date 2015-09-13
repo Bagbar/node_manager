@@ -9,6 +9,8 @@
 
 extern uint32_t ownIP;
 
+char errormessage[100];
+
 #define BUFFERSIZE 1024
 
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t *typeAndGroup)
@@ -311,7 +313,7 @@ void* start(void *start_args)
 	//TODO free this pointer
 	int *return_ptr = malloc(sizeof(int));
 	struct cluster_info *clusterInfo_ptr = start_args;
-	int *values;
+	int *values = NULL;
 	int restNodes;
 	char filename[10] = "test.xml";
 	xmlDocPtr inputXML = xmlParseFile(filename), outputXML = NULL;
@@ -369,14 +371,17 @@ void * getProgram(void * args)
 	}
 	do
 	{
-		printf("waiting for conection\n");
+		printf("waiting for broadcast\n");
 		recvReturn_i = recvfrom(waitForBroadcast_sock, &listenBuff[0], sizeof listenBuff, 0,
 				(struct sockaddr*) &connect_addr, &connect_len);
-		printf("received:%s",listenBuff);
+		printf("received:%s\n", listenBuff);
 		if (!strcmp(listenBuff, "fetch"))
 		{
+
 			sendto(waitForBroadcast_sock, &ack, sizeof ack, 0, (struct sockaddr*) &connect_addr,
 					connect_len);
+			sleep(2);
+			connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
 			printf("connecting\n");
 			int return_connect = connect(openConnection_sock, (struct sockaddr*) &connect_addr,
 					connect_len);
@@ -395,25 +400,127 @@ void * getProgram(void * args)
 				if (recvReturn_i < 0)
 					printf("recverror:%s\n", strerror(errno));
 				else
-					printf("recv data = %d", recvReturn_i);
+					printf("recv data = %d\n", recvReturn_i);
 
 				fwrite(&recvBuffer[0], 1, recvReturn_i, pFile);
 			} while (recvReturn_i == BUFFERSIZE && feof(pFile) == 0); //TODO maybe change to EOF check
 
 			fclose(pFile);
 			close(openConnection_sock);
-			received =1;
+			received = 1;
 		}
-	} while (received);
+	} while (received == 0);
+
+	// TODO 1 insert start and send back the result
 	close(waitForBroadcast_sock);
 
-	// w8 for broadcast and open tcp connection to sender to fetch the data archive, decompress archive
 	return NULL;
 }
 void * distributeData(void * args)
 {
 	xmlDocPtr doc = args;
+	size_t filesize = 0, scriptsize = 0;
+	int i;
+	char *filename = NULL, *scriptname = NULL, continue_c = 0, localname[30], command[70];
+
+	uint32_t IP;
+	xmlNodePtr node = NULL, child = NULL, file = NULL;
+	node = xmlDocGetRootElement(doc);
+	if (node == NULL)
+	{
+		printf("master:distributeData: wrong doc");
+	}
+	node = node->children;
+	int min_i, weight_i;
+
+	while (node) //node!=NULL
+	{
+
+		if (node->type == XML_ELEMENT_NODE)
+		{
+			i = 0;
+			filename = NULL;
+			child = node->children;
+			while (child != NULL && xmlStrcmp(child->name, (xmlChar *) "files"))
+			{
+				child = child->next;
+			}
+			if (!xmlStrcmp(child->name, (xmlChar *) "files"))
+			{
+				child = child->children;
+				while (child)
+				{
+
+					if (!xmlStrcmp(child->name, (xmlChar *) "script"))
+					{
+						scriptname = child->content;
+					}
+					else
+					{
+						if (!xmlStrcmp(child->name, (xmlChar *) "archive"))
+						{
+							filename = child->content;
+						}
+
+						else
+						{
+							if (filename == NULL)
+							{
+								memset(&localname[0], 0, sizeof localname);
+								strcpy(&localname[0], (char*) node->name);
+								filename = &localname[0];
+								i = 0;
+								while (localname[i])
+								{
+									i++;
+								}
+								strcpy(&localname[i], ".tar");
+								sprintf(&command[0], "tar -cf %s %s", filename, (char*) child->content);
+								system(command);
+							}
+							else
+							{
+								sprintf(&command[0], "tar -rf %s %s", filename, (char*) child->content);
+								system(command);
+							}
+						}
+					}
+				}
+
+			}
+			else
+			{
+				sprintf(errormessage, "master:distributeData:No files in %s", (char*) node->name);
+				printf(errormessage);
+				return -1;
+			}
+
+			if (i > 0) //i is the position of ".tar" in the filename for the archive if 0 no archive was generated
+			{
+				if (localname == filename)
+				{
+					memset(&command[0], 0, sizeof command);
+					sprintf(&command[0], "gzip  %s", localname);
+					system(command);
+					strcpy(&filename[i + 4], ".gz");
+				}
+				else
+				{
+					sprintf(errormessage, "master:distributeData: pointer error");
+					printf(errormessage);
+					return -1;
+				}
+			}
+
+
+			// TODO 1 get filesize
+		}
+
+		node = node->next;
+
+	}
 
 	//go through the XML doc to distribute the data to the nodes in new packed archives
 	return NULL;
 }
+

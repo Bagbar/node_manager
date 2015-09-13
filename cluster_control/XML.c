@@ -110,7 +110,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 {
 
 	xmlNodePtr rootOld = NULL, rootNew = NULL, curNew = NULL, curOld = NULL, masterOld = NULL, child =
-			NULL, destSearch=NULL;
+	NULL, destSearch = NULL;
 	xmlChar *destination_str, *id_str;
 	xmlChar partnumber_str[10];
 	char isElement = 0;
@@ -167,7 +167,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	}
 
 	// fill every entry with the corresponding information
-	while (curNew != NULL && curNew->type != XML_ELEMENT_NODE )
+	while (curNew != NULL && curNew->type != XML_ELEMENT_NODE)
 		curNew = curNew->next;
 	//iterate through old Doc to get the information
 	while (curOld != NULL && curNew != NULL)
@@ -187,9 +187,10 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 			if (curNew != NULL)
 			{
 				if (!xmlStrcmp(curOld->name, (const xmlChar *) "node"))
-				{id_str = xmlGetProp(curOld, (xmlChar *) "id");
-					xmlSetProp(curNew, (xmlChar *) "id",id_str );
-				xmlFree(id_str);
+				{
+					id_str = xmlGetProp(curOld, (xmlChar *) "id");
+					xmlSetProp(curNew, (xmlChar *) "id", id_str);
+					xmlFree(id_str);
 					curNew->children = curOld->children;
 
 					do
@@ -235,7 +236,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 						{
 							printf("now %s\n", curNew->name);
 							id_str = xmlGetProp(curOld, (xmlChar *) "id");
-							xmlSetProp(curNew, (xmlChar *) "id",id_str );
+							xmlSetProp(curNew, (xmlChar *) "id", id_str);
 
 							curNew->children = curOld->children;
 							sprintf(partnumber_str, "%d", i);
@@ -243,9 +244,10 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 							//if(xmlStrcmp(curNew->name, (const xmlChar *) "IP_269488144"))
 							{
 								do
-								{xmlFree(id_str);
+								{
+									xmlFree(id_str);
 									curNew = curNew->next;
-									id_str= xmlGetProp(curNew, (xmlChar *) "id");
+									id_str = xmlGetProp(curNew, (xmlChar *) "id");
 									//printf("next %s\n", curNew->name);
 								} while ((curNew != NULL && curNew->type != XML_ELEMENT_NODE)
 										|| !xmlStrcmp(id_str, (const xmlChar *) "master"));
@@ -260,9 +262,9 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		curOld = curOld->next;
 	}
 	printf("saving file");
-		xmlSaveFile("intermediate.xml", docNew);
-		xmlDocPtr inputXML = xmlParseFile("intermediate.xml");
-		xmlNodePtr root =  xmlDocGetRootElement(inputXML);
+	xmlSaveFile("intermediate.xml", docNew);
+	xmlDocPtr newXMLdoc = xmlParseFile("intermediate.xml");
+	xmlNodePtr root = xmlDocGetRootElement(newXMLdoc);
 	curNew = root->children;
 
 	while (curNew != NULL)
@@ -270,44 +272,46 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		if (curNew->type == XML_ELEMENT_NODE)
 		{
 			child = curNew->children;
-			while (child != NULL && xmlStrcmp(child->name,(xmlChar *) "destination"))
-				{
-					child = child->next;
-				}
-				if (child)
-				{
-					destination_str = xmlNodeGetContent(child);
-					destSearch = rootNew->children;
-					while (destSearch != NULL )
-					{id_str = xmlGetProp(destSearch, (xmlChar *) "id");
-						printf("current: node= %s \t search= %s\tcurrent_id = %s \t searched =%s \n",curNew->name,destSearch->name ,id_str,destination_str);
-						if(!xmlStrcmp(id_str,destination_str))
-						{
-							printf("%s",&(destSearch->name[3]));
-							//exit(0);
-							xmlNewChild(curNew,NULL,(xmlChar*)"dest_IP",&(destSearch->name[3]));
-						}
+			while (child != NULL && xmlStrcmp(child->name, (xmlChar *) "destination"))
+			{
+				child = child->next;
+			}
+			if (child)
+			{
+				destination_str = xmlNodeGetContent(child);
+				destSearch = rootNew->children;
 
-						xmlFree(id_str);
-						destSearch = destSearch->next;
-					}
-					xmlFree(destination_str);
-				}
-				/*else
+				//search all nodes with this id and ad their IP
+				while (destSearch != NULL)
 				{
-					printf("XML: no destination specified");
-						return NULL;
-				}*/
+					id_str = xmlGetProp(destSearch, (xmlChar *) "id");
+					printf("current: node= %s \t search= %s\tcurrent_id = %s \t searched =%s \n",
+							curNew->name, destSearch->name, id_str, destination_str);
+					if (!xmlStrcmp(id_str, destination_str))
+					{
+						printf("%s", &(destSearch->name[3]));
+						//exit(0);
+						xmlNewChild(curNew, NULL, (xmlChar*) "dest_IP", &(destSearch->name[3]));
+					}
+
+					xmlFree(id_str);
+					destSearch = destSearch->next;
+				}
+				xmlFree(destination_str);
+			}
+			/*else
+			 {
+			 printf("XML: no destination specified");
+			 return NULL;
+			 }*/
 
 		}
-		curNew =curNew->next;
+		curNew = curNew->next;
 	}
-	//print_element_names(rootNew);
-
-	printf("saving newfile");
-	xmlSaveFile("newfile.xml", inputXML);
+	XMLremoveUnusedNodes(newXMLdoc);
+	xmlSaveFile("newfile.xml", newXMLdoc);
 	xmlFree(docNew);
-	return inputXML;
+	return newXMLdoc;
 }
 
 xmlDocPtr XMLread(char *filename)
@@ -344,4 +348,28 @@ int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName)
 	}
 
 	return convert_i;
+}
+
+void XMLremoveUnusedNodes(xmlDocPtr doc)
+{
+
+	xmlNodePtr node = xmlDocGetRootElement(doc);
+	node = node->children;
+	while (node->next)
+	{
+		if (node->next->children == NULL)
+		{
+			XMLremoveNode(node->next);
+		}
+		else
+		{
+			node = node->next;
+		}
+	}
+}
+
+void XMLremoveNode(xmlNodePtr node)
+{
+	xmlUnlinkNode(node);
+	xmlFreeNode(node);
 }

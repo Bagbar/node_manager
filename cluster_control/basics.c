@@ -150,3 +150,23 @@ char* networkToDottedIP(uint32_t ip)
     sprintf(IP,"%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);
     return IP;
 }
+
+
+long int fsize(char* file) {
+  long int size;
+  FILE* fh;
+
+  fh = fopen(file, "rb"); //binary mode
+  if(fh != NULL){
+    if( fseek(fh, 0, SEEK_END) ){
+      fclose(fh);
+      return -1;
+    }
+
+    size = ftell(fh);
+    fclose(fh);
+    return size;
+  }
+
+  return -1; //error
+}
