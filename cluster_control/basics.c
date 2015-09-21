@@ -170,3 +170,4 @@ long int fsize(char* file) {
 
   return -1; //error
 }
+

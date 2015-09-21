@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 
 #define ARCHIVE_NAME "archive.tar.gz"
+#define OUTPUT_XML_NAME "output.xml"
 #define CHECK_OKAY 0
 #define CHECK_FAILED 1
 #define WORK_THREAD_CANCELED 100
@@ -46,7 +47,7 @@
 #define PING_PERIOD 2 ///in sec
 #define TIMEOUT_PERIODS 5
 #define REALLOC_STEPSIZE 3
-#define PINGS_PER_IDENTIFY 6//used in master_control defines how long the intervals between network updates are
+#define PINGS_PER_IDENTIFY 6//used in master_main defines how long the intervals between network updates are
 #define TIMEOUT 3 //how often a non-block-receive returns with nothing
 
 //Port defines
@@ -64,6 +65,8 @@
 //everyone with the same number shall be in the same subgroup (not active)
 #define CLUSTERGROUP 0
 
+#define FILENAME_SIZE 30
+
 ///struct for storing a variable with a corresponding mutex
 struct var_mtx
 {
@@ -77,6 +80,16 @@ struct slave_args
 	struct var_mtx *timeout_count;
 	int *master_ptr;
 	uint8_t *subgroup_ptr;
+};
+
+/** \brief  struct in for sending the file_info over ethernet, shall be copied into the buffer
+ *
+ * WARNING this experimental and might not work
+ */
+struct fileInfo_bufferformat
+{
+	size_t file_size;
+	char workname[FILENAME_SIZE], scriptname[FILENAME_SIZE];
 };
 
 /// struct for list of nodes

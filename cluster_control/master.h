@@ -17,31 +17,41 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/fcntl.h>
 
 #include "XML.h"
 #include "basics.h"
 
 
 
-/// arguments for send_info function contains target IP and size of the file
+//TODO add documentation for pthreadable function parameters
+
+/// arguments for sendInfo function contains target IP and size of the file
 struct send_info
 {
 	size_t file_size;
+	char *workname, *scriptname;
 	uint32_t IP; ///network format
 };
 
-/// arguments for send_file function contains target IP and name of the file to be sent
+/// arguments for sendFile function contains target IP and name of the file to be sent
 struct send_file
 {
-	char filename[20];
+	char *filename;
 	//	int filetype_i;
 	uint32_t IP; /// network format
+};
+
+struct get_Program
+{
+	char exitSignal;
+	struct cluster_info *clusterInfo_ptr;
 };
 
 /** \brief gets called when Node is elected as master, manages network exploration, job receiving and process distrubution
  *
  */
-int master_control(int mastBroad_sock);
+int master_main(int mastBroad_sock);
 
 /** \brief adds nodes to clusterInfo with the info of IP, type and group
  *
@@ -71,21 +81,32 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
 
 /** \brief sends information about the program files to the node
  *
- * At the moment this is only the size of the archive that will be send
+ * sends the name of the script, the name of the work function and the size of the archive
  */
-void *send_info(void *send_info_args);
+void *sendInfo(void *args);
 
 /** \brief sends file to the target
  *
+ *
  */
-void *send_file(void *send_file_args);
+void *sendFile(void *args);
+
+/** \brief uses sendInfo and sendFile
+ *
+ */
+void *getFilesAndSend(void *args);
 
 /**starts the distrubution and work
  * returns a pointer to an int that has to be freed.
  */
-void * start(void *start_args);
+void * createDistributionXML(void *start_args);
 
 void * getProgram(void * args);
 
+/** \brief
+ *
+ * returns NULL when everything is okay and a pointer to a char array with the error message if anything occurred
+ * errormessage is a global variable at the moment
+ */
 void * distributeData(void * args);
 #endif /* MASTER_H_ */

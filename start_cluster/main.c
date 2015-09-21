@@ -35,7 +35,7 @@ int main(int argc, const char* argv[])
 		int recv_return_i, returnSend_i, bytesRead_i;
 		FILE * pFile;
 		int broadcast_sock, transfer_sock, recvReturn_i;
-		char broadSendBuff[10] = "fetch", broadRecvBuff[100], bytesRead_i_i[BUFFERSIZE];
+		char broadSendBuff[10] = "fetch", broadRecvBuff[100], fileSendBuff[BUFFERSIZE];
 
 		printf("opening: %s\n",argv[1]);
 		pFile = fopen(argv[1], "rb");
@@ -97,13 +97,13 @@ int main(int argc, const char* argv[])
 
 
 			do{
-			bytesRead_i = fread(bytesRead_i_i, 1, BUFFERSIZE, pFile);
+			bytesRead_i = fread(fileSendBuff, 1, BUFFERSIZE, pFile);
 				if (bytesRead_i != BUFFERSIZE && feof(pFile)==0)
 				{
 					fputs("Reading error", stderr);
 					exit(3);
 				}
-				returnSend_i = send(return_accept, bytesRead_i_i, bytesRead_i, 0);
+				returnSend_i = send(return_accept, fileSendBuff, bytesRead_i, 0);
 					if (returnSend_i < 0)
 						printf("senderror:%s", strerror(errno));
 					else
@@ -114,9 +114,10 @@ int main(int argc, const char* argv[])
 				fclose(pFile);
 
 		}
-		close(broadcast_sock);
 		close(transfer_sock);
-		// w8 for broadcast and open tcp connection to sender to fetch the data archive, decompress archive
+		close(broadcast_sock);
+
+
 		return 0;
 	}
 

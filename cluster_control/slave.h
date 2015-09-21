@@ -7,6 +7,7 @@
 
 #ifndef SLAVE_H_
 #define SLAVE_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -25,6 +26,7 @@ struct recv_info
 	size_t archive_size;
 //uint8_t status_okay;
 };
+
 /// argument for receive_file function
 struct recv_file
 { ///the size of the received file
@@ -33,6 +35,7 @@ struct recv_file
 	size_t expected_size;
 };
 
+///  network I/O function for the control communication with the master
 void *slave_main(void *args_struct);
 
 int elect_master();
@@ -47,5 +50,7 @@ void *receive_info(void * transfer_args);
 void *receive_file(void * recv_file_args);
 
 void *execute_work(void *args);
+
+void *fetch_data(void *args);
 
 #endif /* SLAVE_H_ */

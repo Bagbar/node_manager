@@ -40,16 +40,16 @@ int main()
 		pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
 		clusterInfo_sct.num_nodes_i = 0;
 			clusterInfo_sct.size_i = EST_NUM_BOARD;
-			uint8_t typeAndGrouup[2]= {1,1};
-			addNode2List(&clusterInfo_sct,0x11111111,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111112,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111113,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111114,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111115,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111116,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x11111110,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,ownIP,typeAndGrouup);
-			addNode2List(&clusterInfo_sct,0x10101010,typeAndGrouup);
+			uint8_t typeAndGroup[2]= {1,1};
+			addNode2List(&clusterInfo_sct,0x11111111,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111112,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111113,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111114,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111115,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111116,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x11111110,typeAndGroup);
+			addNode2List(&clusterInfo_sct,ownIP,typeAndGroup);
+			addNode2List(&clusterInfo_sct,0x10101010,typeAndGroup);
 
 
 	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);
@@ -74,12 +74,12 @@ int main()
 
 	struct var_mtx timeCount_mtx_sct =
 	{ 1, PTHREAD_MUTEX_INITIALIZER };
-	struct slave_args bg_listen_args =
+	struct slave_args slaveMain_args =
 	{ &timeCount_mtx_sct, &master_i, &subgroup_u8 };
 
 	pthread_t slave_thread;
 	if (pthread_create(&slave_thread, NULL, slave_main,
-			(void*) &bg_listen_args))
+			(void*) &slaveMain_args))
 	{
 		critErr("pthread_create(slave)=");
 	}
@@ -97,7 +97,7 @@ int main()
 		critErr("main: couldn't set setsockopt:");
 
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
-	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
+	//fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 
 	// Timeout-counter for master communication
 	while (1)
@@ -109,7 +109,7 @@ int main()
 		if (master_i)
 		{
 			printf("I am master and start control function mutex is locked\n");
-			master_control(mastBroad_sock);
+			master_main(mastBroad_sock);
 			master_i = 0;
 		}
 		if (timeCount_mtx_sct.var > PING_PERIOD * TIMEOUT_PERIODS)

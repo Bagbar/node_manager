@@ -74,7 +74,7 @@ int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 				else
 				{
 					printf("XMLGetMinNodeAndTotalWeight: unknown Node type");
-					return -1;
+					return NULL;
 				}
 			}
 
@@ -239,7 +239,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 							xmlSetProp(curNew, (xmlChar *) "id", id_str);
 
 							curNew->children = curOld->children;
-							sprintf(partnumber_str, "%d", i);
+							sprintf((char*)partnumber_str, "%d", i);
 							xmlSetProp(curNew, (xmlChar*) "part", partnumber_str);
 							//if(xmlStrcmp(curNew->name, (const xmlChar *) "IP_269488144"))
 							{
@@ -309,7 +309,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		curNew = curNew->next;
 	}
 	XMLremoveUnusedNodes(newXMLdoc);
-	xmlSaveFile("newfile.xml", newXMLdoc);
+	xmlSaveFile(OUTPUT_XML_NAME, newXMLdoc);
 	xmlFree(docNew);
 	return newXMLdoc;
 }
@@ -372,4 +372,12 @@ void XMLremoveNode(xmlNodePtr node)
 {
 	xmlUnlinkNode(node);
 	xmlFreeNode(node);
+}
+
+xmlDocPtr XMLNodeToDoc(xmlNodePtr node)
+{
+	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
+	xmlDocSetRootElement(docNew,node);
+
+	return docNew;
 }

@@ -9,18 +9,16 @@
 
 #define BUFFERSIZE 10
 #define IDENTIFIER_LENGTH 8 // 1 for type + 6 for MAC + 1 for subgroup
-#define EVERYTHING_OKAY 7 //bit0+bit1+bit2
 
-//FIXME is this okay??
+
 extern uint8_t mac[6];
 //receives commands from master for managing the cluster and starts the threads for the actual work
 void *slave_main(void *args_ptr)
-///  network I/O function for the control communication with the master
 {
 	//Variable declarations
 	struct var_mtx *timeoutCounter_ptr =
 			((struct slave_args*) args_ptr)->timeout_count;
-	int *master_ptr = ((struct slave_args*) args_ptr)->master_ptr; //TODO check if better with or without cast
+	int *master_ptr = ((struct slave_args*) args_ptr)->master_ptr;
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
 	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
@@ -110,7 +108,6 @@ void *slave_main(void *args_ptr)
 				critErr("listen: mutex_lock:");
 			printf("+");
 			timeoutCounter_ptr->var = 0;
-			// TODO check if this is the only call of am_I_master
 			*master_ptr = elect_master(electRecv_sock);
 			printf("master= %d", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
@@ -229,14 +226,13 @@ int elect_master(int electRecv_sock)
 }
 
 //fetches target IPaddress for processed data, size of work program
-void *receive_info(void * transfer_args)
+void *receive_info(void * args)
 {
-	struct recv_info *recv_info_ptr = transfer_args;
+	struct fileInfo_bufferformat *recvBuff = args;
 	uint8_t check_u8;
 	pthread_t recv_archive_thread, work_thread;
-	struct recv_file recv_work_args, recv_bit_args, recv_driver_args;
 
-	size_t file_size= 0;
+
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (return_socket < 0)
@@ -262,9 +258,9 @@ void *receive_info(void * transfer_args)
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
 			check_u8 = CHECK_FAILED;
 		}
-		recv(return_accept, &file_size, sizeof file_size, 0);
+		recv(return_accept, &recvBuff, sizeof recvBuff, 0);
 
-		if (file_size == 0)
+		if (recvBuff == 0)
 		{
 			pthread_cancel(work_thread);
 			check_u8 = WORK_THREAD_CANCELED;
@@ -362,5 +358,13 @@ void *execute_work(void *args)
 {
 	system("./work");
 	return NULL;
+}
+
+void *fetch_data(void *args)
+{
+
+	struct fileInfo_bufferformat recvInfoBuff;
+	receive_info(&recvInfoBuff);
+
 }
 
