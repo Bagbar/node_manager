@@ -25,6 +25,7 @@
 
 #define ARCHIVE_NAME "archive.tar.gz"
 #define OUTPUT_XML_NAME "output.xml"
+#define INPUT_XML_NAME "input.xml"
 #define CHECK_OKAY 0
 #define CHECK_FAILED 1
 #define WORK_THREAD_CANCELED 100

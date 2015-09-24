@@ -313,7 +313,7 @@ void* getFilesAndSend(void* args)
 
 	int endOfString_i = 0;
 	char *filename = NULL, localname[FILENAME_SIZE], command[FILENAME_SIZE + 40], once = 1;
-	;
+
 
 	child = node->children;
 	while (child != NULL && xmlStrcmp(child->name, (xmlChar *) "files"))
@@ -335,23 +335,30 @@ void* getFilesAndSend(void* args)
 			{
 				if (!xmlStrcmp(child->name, (xmlChar *) "script"))
 				{
-					sendInfo_sct->scriptname = (char*) child->content;
+					sendInfo_sct.scriptname = (char*) child->content;
 				}
 				if (!xmlStrcmp(child->name, (xmlChar *) "work"))
 				{
-					sendInfo_sct->workname = (char*) child->content;
+					sendInfo_sct.workname = (char*) child->content;
 				}
 				if (filename == NULL)
 				{
 					memset(&localname[0], 0, sizeof localname);
 					strcpy(&localname[0], (char*) node->name);
+					xmlDocPtr subDoc = xmlNewDoc((xmlChar *) "1.0");
+					xmlDocSetRootElement(subDoc,node);
+					char subDocName[20];
+					sprintf(subDocName,"%s.xml",(char*)node->name);
+					xmlSaveFile(subDocName,subDoc);
+					xmlDocSetRootElement(subDoc,NULL);
+					xmlFree(subDoc);
 					filename = &localname[0];
 					while (localname[endOfString_i])
 					{
 						endOfString_i++;
 					}
 					strcpy(&localname[endOfString_i], ".tar");
-					sprintf(&command[0], "tar -cf %s %s", filename, OUTPUT_XML_NAME);
+					sprintf(&command[0], "tar -cf %s %s", filename, subDocName);//OUTPUT_XML_NAME
 					system(command);
 				}
 
@@ -406,7 +413,7 @@ void* createDistributionXML(void *args)
 	struct cluster_info *clusterInfo_ptr = args;
 	int *values = NULL;
 	int restNodes;
-	char filename[10] = "input.xml";
+	char filename[FILENAME_SIZE] = INPUT_XML_NAME;
 	xmlDocPtr inputXML = xmlParseFile(filename), outputXML = NULL;
 	if (inputXML == NULL)
 	{
@@ -614,15 +621,17 @@ void * distributeData(void * args)
 
 		node = node->next;
 
+
 	}
 	for (int i = 0; i < allocatedThreads_i; i++)
 	{
 		char * ret;
-		pthread_join(send_threads[i], &ret);
+		pthread_join(send_threads[i], (void **)&ret);
 		if (ret)
 			errormarker = ret;
 	}
 
+	free(send_threads);
 	return errormarker;
 }
 

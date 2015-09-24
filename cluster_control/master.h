@@ -39,11 +39,13 @@ struct send_file
 {
 	char *filename;
 	//	int filetype_i;
-	uint32_t IP; /// network format
+	uint32_t IP; // network format
 };
 
+/// argument for getProgram
 struct get_Program
 {
+	/// let's getProgram return when it is waiting, when a file was received it does not do anything
 	char exitSignal;
 	struct cluster_info *clusterInfo_ptr;
 };
@@ -82,28 +84,46 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
 /** \brief sends information about the program files to the node
  *
  * sends the name of the script, the name of the work function and the size of the archive
+ *
+ * takes struct send_info as an argument
  */
 void *sendInfo(void *args);
 
 /** \brief sends file to the target
  *
- *
+ * takes struct send_file as an argument
  */
 void *sendFile(void *args);
 
-/** \brief uses sendInfo and sendFile
+/** \brief uses sendInfo and sendFile to distribute the files to a single node
  *
+ *  argument is xmlNodePtr of the target node from the generated XML doc
+ *
+ *  returns a pointer to global errormessage if an error occured
+ *  else returns NULL
  */
 void *getFilesAndSend(void *args);
 
-/**starts the distrubution and work
- * returns a pointer to an int that has to be freed.
+/** \brief reads the XML file from INPUT_XML_NAME and creates the XML file for the distribution
+ *
+ * takes struct cluster_info as an argument
+ * returns a XMLDocPtr to the generated doc that has to be freed (xmlFree)
  */
 void * createDistributionXML(void *start_args);
 
+
+/** \brief waits for a request to fetch data then connects to the sender and loads the program
+ *
+ * takes struct get_program as an argument
+ * returns NULL
+ */
 void * getProgram(void * args);
 
-/** \brief
+/** \brief reads the XML file to start the distribution of the data
+ *
+ *  creates a getFilesAndSend thread for every target node
+ *
+ *	takes the xmlDocPtr to the generated XML file as an argument
  *
  * returns NULL when everything is okay and a pointer to a char array with the error message if anything occurred
  * errormessage is a global variable at the moment

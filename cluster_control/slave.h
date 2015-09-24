@@ -18,7 +18,17 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 
+#include "XML.h"
 #include "basics.h"
+
+#define NODE_ARCHIVE_NAME "data.tar.gz"
+
+///container for target IP addresses
+struct IP_list
+{
+	int amount;
+	uint32_t *IP;
+};
 
 /// argument for receive_info function containing the file size
 struct recv_info
@@ -35,22 +45,59 @@ struct recv_file
 	size_t expected_size;
 };
 
-///  network I/O function for the control communication with the master
+/** \brief  network I/O function for the control communication with the master
+ *
+ *  receives commands from UDP_NODE_LISTEN_PORT that either
+ *
+ *  -reset the timeout counter
+ *  -triggers an identification message and reset timeout counter
+ *  -tell that a timeout was detected and elect_master is called
+ */
 void *slave_main(void *args_struct);
 
+
+/** \brief communicataes with all other notes to find a new master
+ *
+ *  the system with the lowest type number (defiened in basics.h) will be master
+ *  when two or more are of the lowest tyoe, the loweset MAC is deciding
+ *
+ *  returns 0 when not master
+ *  returns non-0 when it got elected
+ *
+ *  the result has to be written to master_i in main to take effect
+ */
 int elect_master();
 
-void recvMasterControlMsg(struct slave_args *slaveArgs_ptr, int recvMast_sock,
-		int electRecv_sock);
+/** \brief receives necessary information for the files that are received with receive _file
+ *
+ * takes struct fileInfo_bufferformat as an argument
+ * returns NULL
+ */
+void *receive_info(void * args);
+
+/** \brief receives and archive in tar.gz format and names it NODE_ARCHIVE_NAME
+ *
+ * takes struct recv_file as an argument
+ * returns NULL
+ *
+ * contains exit() calls that should be replaced in the future for better error handling
+ */
+void *receive_file(void * args);
+
+/** \brief calls the receive functions unpacks the archive and starts the script and executable
+ *
+ */
+void *fetchDataAndExecute(void *args);
 
 
+/** \brief generates an IP_list with the destination IPs
+ *
+ * returned pointer has to be freed after use
+ *
+ * the IPs are taken only from <dest_IP> nodes on the first level after root
+ *
+ */
+struct IP_list  *getIPfromXML(xmlDocPtr doc);
 
-void *receive_info(void * transfer_args);
-
-void *receive_file(void * recv_file_args);
-
-void *execute_work(void *args);
-
-void *fetch_data(void *args);
 
 #endif /* SLAVE_H_ */

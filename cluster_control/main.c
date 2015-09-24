@@ -25,6 +25,7 @@ uint32_t ownIP; //in network format (htonl/inet_addr used)
 
 int main()
 {
+
 	char filename[10] = "test.xml";
 	getMAC(mac);
 	ownIP = getIP();

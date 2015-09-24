@@ -10,14 +10,13 @@
 #define BUFFERSIZE 10
 #define IDENTIFIER_LENGTH 8 // 1 for type + 6 for MAC + 1 for subgroup
 
-
 extern uint8_t mac[6];
+extern uint32_t ownIP;
 //receives commands from master for managing the cluster and starts the threads for the actual work
 void *slave_main(void *args_ptr)
 {
 	//Variable declarations
-	struct var_mtx *timeoutCounter_ptr =
-			((struct slave_args*) args_ptr)->timeout_count;
+	struct var_mtx *timeoutCounter_ptr = ((struct slave_args*) args_ptr)->timeout_count;
 	int *master_ptr = ((struct slave_args*) args_ptr)->master_ptr;
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
@@ -30,9 +29,8 @@ void *slave_main(void *args_ptr)
 	recv_info_sct.archive_size = 0;
 	//trans_info_sct.status_okay = 0;
 
-	pthread_t recv_info_thread;
-	if (pthread_create(&recv_info_thread, NULL, receive_info,
-			(void*) &recv_info_sct))
+	pthread_t waitForData_thread;
+	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) &recv_info_sct))
 	{
 		critErr("slave:pthread_create(recv_info)=");
 	}
@@ -51,8 +49,7 @@ void *slave_main(void *args_ptr)
 	//listen socket address and bind for master control messages
 	fillSockaddrAny(&serv_addr, UDP_NODE_LISTEN_PORT);
 
-	if ((bind(recvMast_sock, (struct sockaddr*) &serv_addr, sizeof serv_addr))
-			< 0)
+	if ((bind(recvMast_sock, (struct sockaddr*) &serv_addr, sizeof serv_addr)) < 0)
 	{
 		critErr("listen:bind recv_mast_sock:");
 	}
@@ -65,8 +62,7 @@ void *slave_main(void *args_ptr)
 	//listen socket address and bind for electing master
 	fillSockaddrAny(&elect_recv_addr, UDP_ELECT_M_PORT);
 
-	if ((bind(electRecv_sock, (struct sockaddr*) &elect_recv_addr,
-			sizeof(elect_recv_addr))) < 0)
+	if ((bind(electRecv_sock, (struct sockaddr*) &elect_recv_addr, sizeof(elect_recv_addr))) < 0)
 	{
 		critErr("listen:bind elect_recv_sock:");
 	}
@@ -77,10 +73,10 @@ void *slave_main(void *args_ptr)
 	// should be an endless loop
 	while (1)
 	{
+
 		printf("listen: wait for message:\n");
 		// Recieve msg from master,
-		recvReturn_i = recvfrom(recvMast_sock, &recvBuff, 1, 0,
-				(struct sockaddr*) &cli_addr, &cli_len);
+		recvReturn_i = recvfrom(recvMast_sock, &recvBuff, 1, 0, (struct sockaddr*) &cli_addr, &cli_len);
 		printf("listen: received : %c \n", recvBuff[0]);
 
 		switch (recvBuff[0])
@@ -89,8 +85,7 @@ void *slave_main(void *args_ptr)
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
 			printf("slave:slave_main:send identify:%d\n",
-					(int) sendto(recvMast_sock, &typeAndGroup[0],
-							sizeof typeAndGroup, 0,
+					(int) sendto(recvMast_sock, &typeAndGroup[0], sizeof typeAndGroup, 0,
 							(struct sockaddr*) &cli_addr, cli_len));
 			//no break
 		case 'k': ///keepalive
@@ -150,8 +145,8 @@ int elect_master(int electRecv_sock)
 	//Broadcast socket address
 	fillSockaddrBroad(&elect_addr, UDP_ELECT_M_PORT);
 	int broadcastEnable = 1;
-	int ret = setsockopt(electSend_sock, SOL_SOCKET, SO_BROADCAST,
-			&broadcastEnable, sizeof(broadcastEnable));
+	int ret = setsockopt(electSend_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable,
+			sizeof(broadcastEnable));
 	if (ret)
 		critErr("slave: couldn't set setsockopt:");
 
@@ -161,8 +156,8 @@ int elect_master(int electRecv_sock)
 //		critErr("main:bind elect_sock:");
 //	}
 
-	sendto(electSend_sock, &typeMAC_self[0], sizeof(typeMAC_self), 0,
-			(struct sockaddr*) &elect_addr, electSend_len);
+	sendto(electSend_sock, &typeMAC_self[0], sizeof(typeMAC_self), 0, (struct sockaddr*) &elect_addr,
+			electSend_len);
 	printf("elect: broadcast sent: type and mac\n");
 	//close(elect_send_sock);
 
@@ -170,8 +165,7 @@ int elect_master(int electRecv_sock)
 	while (best_i == 1 && timeout_i > 0)
 	{
 		// Receive msg from other boards
-		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0],
-				sizeof(typeMAC_self), 0, NULL, NULL);
+		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_self), 0, NULL, NULL);
 
 		printf("returnrecv=%d\t", recvReturn_i);
 		if (recvReturn_i != sizeof(typeMAC_self))
@@ -202,14 +196,12 @@ int elect_master(int electRecv_sock)
 				if (typeMAC_other[i] < typeMAC_self[i])
 				{
 					best_i = 0;
-					printf(
-							"I'm not the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n",
-							i, typeMAC_other[i], typeMAC_self[i]);
+					printf("I'm not the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n", i,
+							typeMAC_other[i], typeMAC_self[i]);
 				}
 				else
-					printf(
-							"I'm the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n",
-							i, typeMAC_other[i], typeMAC_self[i]);
+					printf("I'm the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n", i,
+							typeMAC_other[i], typeMAC_self[i]);
 				i++;
 			}
 		}
@@ -217,8 +209,7 @@ int elect_master(int electRecv_sock)
 	//flush the socket
 	while (recvReturn_i >= 0)
 	{
-		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0],
-				sizeof(typeMAC_self), 0, NULL, NULL);
+		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_self), 0, NULL, NULL);
 		printf("flush\n");
 	}
 
@@ -232,7 +223,6 @@ void *receive_info(void * args)
 	uint8_t check_u8;
 	pthread_t recv_archive_thread, work_thread;
 
-
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (return_socket < 0)
@@ -242,8 +232,7 @@ void *receive_info(void * args)
 	socklen_t len;
 	fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
 
-	int return_bind = bind(return_socket, (struct sockaddr*) &addr,
-			sizeof(addr));
+	int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
 	if (return_bind < 0)
 		printf("slave: recv_info: binderror:%s\n", strerror(errno));
 
@@ -251,8 +240,7 @@ void *receive_info(void * args)
 
 	while (1)
 	{
-		int return_accept = accept(return_socket, (struct sockaddr*) &client,
-				&len);
+		int return_accept = accept(return_socket, (struct sockaddr*) &client, &len);
 		if (return_accept < 0)
 		{
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
@@ -279,9 +267,9 @@ void *receive_info(void * args)
 }
 
 //fetches the files
-void *receive_file(void * recv_file_args)
+void *receive_file(void * args)
 {
-	struct recv_file * file_info_ptr = recv_file_args;
+	struct recv_file * file_info_ptr = args;
 
 	uint8_t check_u8;
 	size_t file_size = 0;
@@ -299,20 +287,18 @@ void *receive_file(void * recv_file_args)
 	socklen_t len;
 	fillSockaddrAny(&addr, TCP_RECV_ARCHIVE_PORT);
 
-	int return_bind = bind(recv_sock, (struct sockaddr*) &addr,
-			sizeof(addr));
+	int return_bind = bind(recv_sock, (struct sockaddr*) &addr, sizeof(addr));
 	if (return_bind < 0)
 		printf("binderror:%s\n", strerror(errno));
 
 	listen(recv_sock, 1);
 	do
 	{
-		int return_accept = accept(recv_sock, (struct sockaddr*) &client,
-				&len);
+		int return_accept = accept(recv_sock, (struct sockaddr*) &client, &len);
 		if (return_accept < 0)
 			printf("accepterror:%s\n", strerror(errno));
 
-		pFile = fopen("data.tar.gz", "wb");
+		pFile = fopen(NODE_ARCHIVE_NAME, "wb");
 		if (pFile == NULL)
 		{
 			fputs("File error", stderr);
@@ -329,7 +315,7 @@ void *receive_file(void * recv_file_args)
 
 			fwrite(recvBuff, 1, recv_return_i, pFile);
 			file_size += recv_return_i;
-		} while (recv_return_i == BUFFERSIZE); //TODO maybe change to EOF check
+		} while (recv_return_i == BUFFERSIZE); //TODO maybe change
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;
@@ -354,17 +340,93 @@ void *receive_file(void * recv_file_args)
 	return NULL;
 }
 
-void *execute_work(void *args)
+void *fetchDataAndExecute(void *args)
 {
-	system("./work");
+	struct fileInfo_bufferformat recvInfoBuff;
+	char xmlName[20];
+	struct recv_file recvFile_sct =
+	{ 0, 0 };
+	char command[9 + FILENAME_SIZE];
+	struct IP_list *IP_list_ptr;
+	char * workcall;
+
+	while (1)
+	{
+		receive_info(&recvInfoBuff);
+		recvFile_sct.expected_size = recvInfoBuff.file_size;
+		receive_file(&recvFile_sct);
+
+		sprintf(command, "tar xzf %s", NODE_ARCHIVE_NAME);
+		system(command);
+
+		sprintf(xmlName, "IP_%u.xml", ownIP);
+		printf("generated name of the xml file is %s\n", xmlName);
+		xmlDocPtr doc = xmlParseFile(xmlName);
+		IP_list_ptr = getIPfromXML(doc);
+		xmlFree(doc);
+		sprintf(command, "./%s", recvInfoBuff.scriptname);
+		puts(command);
+		system(command);
+		workcall = malloc(IP_list_ptr->amount * 11 + 3 + sizeof(recvInfoBuff.workname));
+		if (workcall == NULL)
+		{
+			printf("slave:fetch_data: char array workcall malloc error");
+			return NULL;
+		}
+
+		sprintf(workcall, "./%s", recvInfoBuff.workname);
+		char singleIP_c[11];
+		for (int i = 0; i < IP_list_ptr->amount; i++)
+		{
+			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
+			strcat(workcall, singleIP_c);
+		}
+		system(workcall);
+		free(IP_list_ptr);
+		free(workcall);
+	}
 	return NULL;
+
 }
 
-void *fetch_data(void *args)
+struct IP_list *getIPfromXML(xmlDocPtr doc)
 {
+	struct IP_list *IPlist_ptr = malloc(sizeof *IPlist_ptr);
+	if (IPlist_ptr == NULL)
+		return NULL;
+	IPlist_ptr->IP = NULL;
+	IPlist_ptr->amount = 0;
+	xmlNodePtr node = xmlDocGetRootElement(doc);
+	xmlNodePtr child = node->children;
+	uint32_t IP_u32;
+	char *IP_str;
+	int i = 0;
+	while (child)
+	{
+		if (!xmlStrcmp(child->name, (xmlChar*) "dest_IP"))
+		{
+			IPlist_ptr->amount++;
+		}
+		child = child->next;
+	}
+	child = node->children;
+	IPlist_ptr->IP = malloc(sizeof(*(IPlist_ptr->IP)) * IPlist_ptr->amount);
+	if (IPlist_ptr->IP == NULL)
+		return NULL;
+	while (child)
+	{
+		if (!xmlStrcmp(child->name, (xmlChar*) "dest_IP"))
+		{
 
-	struct fileInfo_bufferformat recvInfoBuff;
-	receive_info(&recvInfoBuff);
+			IP_str = (char*) xmlNodeGetContent(child);
+			IPlist_ptr->IP[i] = (uint32_t) strtol((char*) IP_str, NULL, 10);
+			//printf("IP_i = %d\n", IP_i);
+			xmlFree(IP_str);
+			i++;
+		}
+		child = child->next;
+	}
 
+	return IPlist_ptr;
 }
 
