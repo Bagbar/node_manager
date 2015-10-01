@@ -174,7 +174,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 
 void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
-	printf("starting update\n");
+	printf("starting update\t");
 	int i, outdated_i = 0;
 //	int timeout_i = TIMEOUT, returnRecv_i;
 //
@@ -199,7 +199,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
-
+	printf("nodes in cluster = %d",clusterInfo_ptr->num_nodes_i);
 }
 
 void *sendInfo(void *args)
@@ -475,7 +475,7 @@ void * getProgram(void * args)
 
 	do
 	{
-		printf("waiting for broadcast\n");
+		printf("master:getProgram:waiting for broadcast\n");
 		continue_i = 1;
 		while (continue_i)
 		{

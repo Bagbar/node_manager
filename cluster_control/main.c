@@ -26,41 +26,41 @@ uint32_t ownIP; //in network format (htonl/inet_addr used)
 int main()
 {
 
-	char filename[10] = "test.xml";
+
 	getMAC(mac);
 	ownIP = getIP();
 	//getProgram(NULL);
 	//return 0;
-
-	xmlDocPtr inputXML = xmlParseFile(filename);
-
-	struct cluster_info clusterInfo_sct;
-	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
-		EST_NUM_BOARD * sizeof(struct node_data));
-		clusterInfo_sct.alive_count_u8 = 1;
-		pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
-		clusterInfo_sct.num_nodes_i = 0;
-			clusterInfo_sct.size_i = EST_NUM_BOARD;
-			uint8_t typeAndGroup[2]= {1,1};
-			addNode2List(&clusterInfo_sct,0x11111111,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111112,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111113,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111114,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111115,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111116,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x11111110,typeAndGroup);
-			addNode2List(&clusterInfo_sct,ownIP,typeAndGroup);
-			addNode2List(&clusterInfo_sct,0x10101010,typeAndGroup);
-
-
-	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);
-	printf("weight = %d, minNodes = %d",nodeAndWeight[WEIGHT_SHIFT],nodeAndWeight[MIN_SHIFT]);
-
-	xmlDocPtr outputXML = buildCompleteXML(inputXML,&clusterInfo_sct,nodeAndWeight);
-	free(clusterInfo_sct.node_data_list_ptr);
-	XMLCleanup(inputXML,outputXML,nodeAndWeight);
-
-	return 0;
+//
+//	xmlDocPtr inputXML = xmlParseFile(filename);
+//
+//	struct cluster_info clusterInfo_sct;
+//	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
+//		EST_NUM_BOARD * sizeof(struct node_data));
+//		clusterInfo_sct.alive_count_u8 = 1;
+//		pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
+//		clusterInfo_sct.num_nodes_i = 0;
+//			clusterInfo_sct.size_i = EST_NUM_BOARD;
+//			uint8_t typeAndGroup[2]= {1,1};
+//			addNode2List(&clusterInfo_sct,0x11111111,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111112,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111113,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111114,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111115,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111116,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x11111110,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,ownIP,typeAndGroup);
+//			addNode2List(&clusterInfo_sct,0x10101010,typeAndGroup);
+//
+//
+//	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);
+//	printf("weight = %d, minNodes = %d",nodeAndWeight[WEIGHT_SHIFT],nodeAndWeight[MIN_SHIFT]);
+//
+//	xmlDocPtr outputXML = buildCompleteXML(inputXML,&clusterInfo_sct,nodeAndWeight);
+//	free(clusterInfo_sct.node_data_list_ptr);
+//	XMLCleanup(inputXML,outputXML,nodeAndWeight);
+//
+//	return 0;
 	int master_i = 0; // 0=no, 1=yes
 	uint8_t subgroup_u8 = CLUSTERGROUP;
 	uint64_t MAC = MACtoDecimal(mac);
@@ -98,7 +98,7 @@ int main()
 		critErr("main: couldn't set setsockopt:");
 
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
-	//fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
+	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 
 	// Timeout-counter for master communication
 	while (1)
@@ -137,8 +137,8 @@ int main()
 				char timeout_detected = 't';
 				sendto(mastBroad_sock, &timeout_detected, 1, 0,
 						(struct sockaddr*) &broad_addr, broad_len);
-				//sendto(mast_broad_sock, &timeout_detected, 1, 0,
-				//						(struct sockaddr*) &loop_addr, loop_len);
+				sendto(mastBroad_sock, &timeout_detected, 1, 0,
+										(struct sockaddr*) &loop_addr, loop_len);
 				printf("timeout signal sent\n");
 
 			}
