@@ -75,7 +75,7 @@ void *slave_main(void *args_ptr)
 	{
 
 		printf("listen: wait for message:\n");
-		// Recieve msg from master,
+		// Receive msg from master,
 		recvReturn_i = recvfrom(recvMast_sock, &recvBuff, 1, 0, (struct sockaddr*) &cli_addr, &cli_len);
 		printf("listen: received : %c \n", recvBuff[0]);
 

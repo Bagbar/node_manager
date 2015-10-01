@@ -80,6 +80,7 @@ int master_main(int mastBroad_sock)
 }
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t *typeAndGroup)
 {
+	printf("master: addNode started");
 	int size_i;
 	void *newList_ptr;
 	if (clusterInfo_ptr->num_nodes_i >= clusterInfo_ptr->size_i)
@@ -112,6 +113,7 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
 {
+	printf("master:readIdentifyAnswers started");
 	int timeout_i = TIMEOUT, returnRecv_i;
 	uint8_t typeAndGroup[2];
 	struct sockaddr_in response_addr;
@@ -122,7 +124,8 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		// Receive msg from other boards
 		returnRecv_i = recvfrom(receive_sock, &typeAndGroup, sizeof typeAndGroup, 0,
 				(struct sockaddr*) &response_addr, &response_len);
-		if (returnRecv_i != 2)
+		printf("master:readIdentifyAnswers: receive_return : %d",returnRecv_i);
+		if (returnRecv_i != sizeof typeAndGroup)
 		{
 			if (returnRecv_i == -1)
 			{
@@ -146,6 +149,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 			if (newList_u8)
 			{
 				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr), &typeAndGroup[0]);
+				printf("master:readIdentify: called addNode for new list");
 			}
 			else
 			{
@@ -154,6 +158,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 						sizeof(struct node_data), compareNodes);
 				if (searchReturn_ptr == NULL)
 				{
+					printf("master:readIdentify: called addNode for existing list");
 					addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr), &typeAndGroup[0]);
 					qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
 							sizeof(struct node_data), compareNodes);
@@ -191,6 +196,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 		{
 			clusterInfo_ptr->node_data_list_ptr[i].ip_u32 = -1;
 			clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
+			printf("master: update Info :node removed");
 			outdated_i++;
 		}
 	}
@@ -199,7 +205,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
-	printf("nodes in cluster = %d",clusterInfo_ptr->num_nodes_i);
+	printf("nodes in cluster = %d\n",clusterInfo_ptr->num_nodes_i);
 }
 
 void *sendInfo(void *args)
