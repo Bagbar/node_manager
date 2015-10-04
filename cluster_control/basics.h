@@ -141,7 +141,7 @@ uint32_t getIP();
  *
  * returns the MAC in 6 Byte chunks to the pointer
  **mac has to point to an array with at least 6 Byte
-*/
+ */
 void getMAC(uint8_t *mac);
 
 /**\brief takes a MAC in the 6 unsigned char array format and converts it to uint64_t

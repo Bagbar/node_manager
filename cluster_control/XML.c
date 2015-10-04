@@ -239,7 +239,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 							xmlSetProp(curNew, (xmlChar *) "id", id_str);
 
 							curNew->children = curOld->children;
-							sprintf((char*)partnumber_str, "%d", i);
+							sprintf((char*) partnumber_str, "%d", i);
 							xmlSetProp(curNew, (xmlChar*) "part", partnumber_str);
 							//if(xmlStrcmp(curNew->name, (const xmlChar *) "IP_269488144"))
 							{
@@ -377,7 +377,7 @@ void XMLremoveNode(xmlNodePtr node)
 xmlDocPtr XMLNodeToDoc(xmlNodePtr node)
 {
 	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
-	xmlDocSetRootElement(docNew,node);
+	xmlDocSetRootElement(docNew, node);
 
 	return docNew;
 }

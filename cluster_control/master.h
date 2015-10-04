@@ -22,8 +22,6 @@
 #include "XML.h"
 #include "basics.h"
 
-
-
 //TODO add documentation for pthreadable function parameters
 
 /// arguments for sendInfo function contains target IP and size of the file
@@ -62,8 +60,7 @@ int master_main(int mastBroad_sock);
  *	ip_u32 is the IP of the node
  *	typeAndGroup is the value received by the node when asked for identification
  */
-void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
-		uint8_t *typeAndGroup);
+void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t *typeAndGroup);
 
 /** \brief receives the previous triggered identification messages from the network and modifies the clusterIndo
  *
@@ -72,8 +69,7 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32,
  * if newList is not 0 all received information is added and the list is sorted afterwards. No check for nodes already in the list is done.
  * in any case clusterInfo has to be configured correctly before
  */
-void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
-		uint8_t newList_u8);
+void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8);
 
 /** \brief calls readIdentifyAnswers and removes node that are not active from the list
  *
@@ -110,7 +106,6 @@ void *getFilesAndSend(void *args);
  * returns a XMLDocPtr to the generated doc that has to be freed (xmlFree)
  */
 void * createDistributionXML(void *start_args);
-
 
 /** \brief waits for a request to fetch data then connects to the sender and loads the program
  *

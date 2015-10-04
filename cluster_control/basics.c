@@ -35,10 +35,10 @@ void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port)
 
 uint32_t getIP()
 {
-	uint32_t IP =0;
+	uint32_t IP = 0;
 	struct ifaddrs *ifaddr, *ifa;
 	int family, s, n;
-	char host[NI_MAXHOST], found=0;
+	char host[NI_MAXHOST], found = 0;
 
 	if (getifaddrs(&ifaddr) == -1)
 	{
@@ -60,11 +60,10 @@ uint32_t getIP()
 
 		if (!strcmp(ifa->ifa_name, "eth0") && family == AF_INET)
 		{
-			printf("%-8s %s (%d)\n", ifa->ifa_name,
-					(family == AF_INET) ? "AF_INET" : "???", family);
+			printf("%-8s %s (%d)\n", ifa->ifa_name, (family == AF_INET) ? "AF_INET" : "???", family);
 			s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
-					NI_MAXHOST,
-					NULL, 0, NI_NUMERICHOST);
+			NI_MAXHOST,
+			NULL, 0, NI_NUMERICHOST);
 			if (s != 0)
 			{
 				printf("getnameinfo() failed: %s\n", gai_strerror(s));
@@ -77,22 +76,21 @@ uint32_t getIP()
 		}
 		//TODO check if this does not activate if eth1 is not active
 		if (!strcmp(ifa->ifa_name, "eth1") && family == AF_INET)
-				{
-					printf("%-8s %s (%d)\n", ifa->ifa_name,
-							(family == AF_INET) ? "AF_INET" : "???", family);
-					s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
-							NI_MAXHOST,
-							NULL, 0, NI_NUMERICHOST);
-					if (s != 0)
-					{
-						printf("getnameinfo() failed: %s\n", gai_strerror(s));
-						exit(EXIT_FAILURE);
-					}
+		{
+			printf("%-8s %s (%d)\n", ifa->ifa_name, (family == AF_INET) ? "AF_INET" : "???", family);
+			s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
+			NI_MAXHOST,
+			NULL, 0, NI_NUMERICHOST);
+			if (s != 0)
+			{
+				printf("getnameinfo() failed: %s\n", gai_strerror(s));
+				exit(EXIT_FAILURE);
+			}
 
-					printf("\t\taddress: <%s>\n", host);
-					IP = inet_addr(host);
+			printf("\t\taddress: <%s>\n", host);
+			IP = inet_addr(host);
 
-				}
+		}
 
 	}
 
@@ -111,8 +109,8 @@ void getMAC(uint8_t *mac)
 	fclose(pFile);
 	//	printf("%s\n", chr);
 
-	sscanf(chr, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &mac[0], &mac[1], &mac[2],
-			&mac[3], &mac[4], &mac[5]);
+	sscanf(chr, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4],
+			&mac[5]);
 
 //	printf("%u", imac);
 
@@ -120,9 +118,8 @@ void getMAC(uint8_t *mac)
 
 uint64_t MACtoDecimal(uint8_t *mac)
 {
-	return ((uint64_t) mac[5]) + (((uint64_t) mac[4]) << 8)
-			+ (((uint64_t) mac[3]) << 16) + (((uint64_t) mac[2]) << 24)
-			+ (((uint64_t) mac[1]) << 32) + (((uint64_t) mac[0]) << 40);
+	return ((uint64_t) mac[5]) + (((uint64_t) mac[4]) << 8) + (((uint64_t) mac[3]) << 16)
+			+ (((uint64_t) mac[2]) << 24) + (((uint64_t) mac[1]) << 32) + (((uint64_t) mac[0]) << 40);
 }
 
 int compareNodes(const void * a, const void * b)
@@ -141,33 +138,35 @@ int compareNodes(const void * a, const void * b)
 char* networkToDottedIP(uint32_t ip)
 {
 
-    unsigned char bytes[4];
-    char *IP = malloc(16);
-    bytes[0] = ip & 0xFF;
-    bytes[1] = (ip >> 8) & 0xFF;
-    bytes[2] = (ip >> 16) & 0xFF;
-    bytes[3] = (ip >> 24) & 0xFF;
-    sprintf(IP,"%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);
-    return IP;
+	unsigned char bytes[4];
+	char *IP = malloc(16);
+	bytes[0] = ip & 0xFF;
+	bytes[1] = (ip >> 8) & 0xFF;
+	bytes[2] = (ip >> 16) & 0xFF;
+	bytes[3] = (ip >> 24) & 0xFF;
+	sprintf(IP, "%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);
+	return IP;
 }
 
+long int fsize(char* file)
+{
+	long int size;
+	FILE* fh;
 
-long int fsize(char* file) {
-  long int size;
-  FILE* fh;
+	fh = fopen(file, "rb"); //binary mode
+	if (fh != NULL)
+	{
+		if (fseek(fh, 0, SEEK_END))
+		{
+			fclose(fh);
+			return -1;
+		}
 
-  fh = fopen(file, "rb"); //binary mode
-  if(fh != NULL){
-    if( fseek(fh, 0, SEEK_END) ){
-      fclose(fh);
-      return -1;
-    }
+		size = ftell(fh);
+		fclose(fh);
+		return size;
+	}
 
-    size = ftell(fh);
-    fclose(fh);
-    return size;
-  }
-
-  return -1; //error
+	return -1; //error
 }
 

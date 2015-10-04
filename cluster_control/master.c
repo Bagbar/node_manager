@@ -16,7 +16,7 @@ char errormessage[100];
 int master_main(int mastBroad_sock)
 {
 
-	printf("I am master\n");
+	printf("master_main started\n");
 	char keep_alive_c = KEEP_ALIVE_SIGNAL, identify_node_c = IDENTIFY_SIGNAL;
 
 	pthread_t listenForData_thread;
@@ -46,15 +46,19 @@ int master_main(int mastBroad_sock)
 		critErr("pthread_create(getProgram)=");
 	}
 
-	struct sockaddr_in broad_addr, recv_addr;
-	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr;
+	struct sockaddr_in broad_addr, loop_addr, recv_addr;
+	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr, loop_len = sizeof loop_addr;
 
+	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
 
 	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
+	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0, (struct sockaddr*) &loop_addr,
+			loop_len);
 	readIdentifyAnswers(mastBroad_sock, &clusterInfo_sct, 1);
+	printf("master:nodes in cluster = %d\n", clusterInfo_sct.num_nodes_i);
 
 	while (master_i)
 	{
@@ -62,7 +66,10 @@ int master_main(int mastBroad_sock)
 		{
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
+			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
+					(struct sockaddr*) &loop_addr, loop_len);
 			updateClusterInfo(&clusterInfo_sct, mastBroad_sock);
+			printf("master:nodes in cluster = %d\n", clusterInfo_sct.num_nodes_i);
 		}
 		else
 		{
@@ -73,14 +80,14 @@ int master_main(int mastBroad_sock)
 
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
-		printf("identify_counter=%d\n", identify_counter_i);
+		printf("master:identify_counter=%d\n", identify_counter_i);
 	}
 	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
 }
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t *typeAndGroup)
 {
-	printf("master: addNode started");
+	printf("master: addNode started\n");
 	int size_i;
 	void *newList_ptr;
 	if (clusterInfo_ptr->num_nodes_i >= clusterInfo_ptr->size_i)
@@ -95,7 +102,7 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 		else
 		{
 			free(clusterInfo_ptr->node_data_list_ptr);
-			printf("couldn't realloc node_data_list");
+			printf("couldn't realloc node_data_list\n");
 			exit(5);
 		}
 	}
@@ -113,19 +120,21 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
 {
-	printf("master:readIdentifyAnswers started");
+	printf("master:readIdentifyAnswers started\n");
 	int timeout_i = TIMEOUT, returnRecv_i;
 	uint8_t typeAndGroup[2];
 	struct sockaddr_in response_addr;
 	socklen_t response_len;
 	struct node_data *searchReturn_ptr;
+
+	size_t typeAndGroup_size = sizeof typeAndGroup;
 	while (timeout_i > 0)
 	{
 		// Receive msg from other boards
-		returnRecv_i = recvfrom(receive_sock, &typeAndGroup, sizeof typeAndGroup, 0,
+		returnRecv_i = recvfrom(receive_sock, &typeAndGroup[0], typeAndGroup_size, 0,
 				(struct sockaddr*) &response_addr, &response_len);
-		printf("master:readIdentifyAnswers: receive_return : %d",returnRecv_i);
-		if (returnRecv_i != sizeof typeAndGroup)
+		printf("master:readIdentifyAnswers: receive_return : %d\n", returnRecv_i);
+		if (returnRecv_i != typeAndGroup_size)
 		{
 			if (returnRecv_i == -1)
 			{
@@ -140,7 +149,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 			}
 			else
 			{
-				printf("master:readIdentifyanswers: recvfrom wrongsize");
+				printf("master:readIdentifyanswers: recvfrom wrongsize\n");
 				exit(4); //should be exclusive for this
 			}
 		}
@@ -179,7 +188,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 
 void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
-	printf("starting update\t");
+	printf("master: updateClusterInfo: start\n");
 	int i, outdated_i = 0;
 //	int timeout_i = TIMEOUT, returnRecv_i;
 //
@@ -196,7 +205,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 		{
 			clusterInfo_ptr->node_data_list_ptr[i].ip_u32 = -1;
 			clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
-			printf("master: update Info :node removed");
+			printf("master: update Info :node removed\n");
 			outdated_i++;
 		}
 	}
@@ -205,7 +214,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
-	printf("nodes in cluster = %d\n",clusterInfo_ptr->num_nodes_i);
+
 }
 
 void *sendInfo(void *args)
@@ -287,7 +296,7 @@ void *sendFile(void *args)
 				printf("master:send_file:Reading error\n");
 				exit(-1);
 			}
-			return_send = send(return_socket, sendBuff, result, 0);
+			return_send = send(return_socket, &sendBuff[0], result, 0);
 			if (return_send < 0)
 				printf("master: send_file: senderror:%s\n", strerror(errno));
 			else
@@ -320,7 +329,6 @@ void* getFilesAndSend(void* args)
 	int endOfString_i = 0;
 	char *filename = NULL, localname[FILENAME_SIZE], command[FILENAME_SIZE + 40], once = 1;
 
-
 	child = node->children;
 	while (child != NULL && xmlStrcmp(child->name, (xmlChar *) "files"))
 	{
@@ -352,11 +360,11 @@ void* getFilesAndSend(void* args)
 					memset(&localname[0], 0, sizeof localname);
 					strcpy(&localname[0], (char*) node->name);
 					xmlDocPtr subDoc = xmlNewDoc((xmlChar *) "1.0");
-					xmlDocSetRootElement(subDoc,node);
+					xmlDocSetRootElement(subDoc, node);
 					char subDocName[20];
-					sprintf(subDocName,"%s.xml",(char*)node->name);
-					xmlSaveFile(subDocName,subDoc);
-					xmlDocSetRootElement(subDoc,NULL);
+					sprintf(subDocName, "%s.xml", (char*) node->name);
+					xmlSaveFile(subDocName, subDoc);
+					xmlDocSetRootElement(subDoc, NULL);
 					xmlFree(subDoc);
 					filename = &localname[0];
 					while (localname[endOfString_i])
@@ -364,7 +372,7 @@ void* getFilesAndSend(void* args)
 						endOfString_i++;
 					}
 					strcpy(&localname[endOfString_i], ".tar");
-					sprintf(&command[0], "tar -cf %s %s", filename, subDocName);//OUTPUT_XML_NAME
+					sprintf(&command[0], "tar -cf %s %s", filename, subDocName); //OUTPUT_XML_NAME
 					system(command);
 				}
 
@@ -423,7 +431,7 @@ void* createDistributionXML(void *args)
 	xmlDocPtr inputXML = xmlParseFile(filename), outputXML = NULL;
 	if (inputXML == NULL)
 	{
-		printf("XML File not correct");
+		printf("XML File not correct\n");
 		return NULL;
 	}
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
@@ -519,7 +527,7 @@ void * getProgram(void * args)
 		if (!strcmp(listenBuff, "fetch"))
 		{
 
-			sendto(waitForBroadcast_sock, &ack, sizeof ack, 0, (struct sockaddr*) &connect_addr,
+			sendto(waitForBroadcast_sock, &ack[0], sizeof ack, 0, (struct sockaddr*) &connect_addr,
 					connect_len);
 			sleep(2);
 			connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
@@ -627,12 +635,11 @@ void * distributeData(void * args)
 
 		node = node->next;
 
-
 	}
 	for (int i = 0; i < allocatedThreads_i; i++)
 	{
 		char * ret;
-		pthread_join(send_threads[i], (void **)&ret);
+		pthread_join(send_threads[i], (void **) &ret);
 		if (ret)
 			errormarker = ret;
 	}

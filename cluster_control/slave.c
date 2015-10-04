@@ -21,7 +21,7 @@ void *slave_main(void *args_ptr)
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
 	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
-	int recvReturn_i;
+	int recvReturn_i, sendreturn;
 	char recvBuff[BUFFERSIZE];
 	memset(recvBuff, '0', BUFFERSIZE);
 
@@ -43,7 +43,7 @@ void *slave_main(void *args_ptr)
 	//create UDP-Socket receiver for control commands
 	if ((recvMast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		critErr("listen:socket=");
+		critErr("slave_main:socket=");
 	}
 
 	//listen socket address and bind for master control messages
@@ -51,12 +51,12 @@ void *slave_main(void *args_ptr)
 
 	if ((bind(recvMast_sock, (struct sockaddr*) &serv_addr, sizeof serv_addr)) < 0)
 	{
-		critErr("listen:bind recv_mast_sock:");
+		critErr("slave_main:bind recv_mast_sock:");
 	}
 	//create UDP-Socket receiver for fetching the type_and_MAC broadcasts
 	if ((electRecv_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		critErr("listen:elect_recv_sock=");
+		critErr("slave_main:elect_recv_sock=");
 	}
 
 	//listen socket address and bind for electing master
@@ -64,7 +64,7 @@ void *slave_main(void *args_ptr)
 
 	if ((bind(electRecv_sock, (struct sockaddr*) &elect_recv_addr, sizeof(elect_recv_addr))) < 0)
 	{
-		critErr("listen:bind elect_recv_sock:");
+		critErr("slave_main:bind elect_recv_sock:");
 	}
 	//non-blocking recv
 	fcntl(electRecv_sock, F_SETFL, O_NONBLOCK);
@@ -74,43 +74,53 @@ void *slave_main(void *args_ptr)
 	while (1)
 	{
 
-		printf("listen: wait for message:\n");
+		printf("slave_main: wait for message:\n");
 		// Receive msg from master,
-		recvReturn_i = recvfrom(recvMast_sock, &recvBuff, 1, 0, (struct sockaddr*) &cli_addr, &cli_len);
-		printf("listen: received : %c \n", recvBuff[0]);
+		recvBuff[0] = 'X';
+		cli_len = 0;
+		recvReturn_i = recvfrom(recvMast_sock, &recvBuff[0], (size_t) 1, 0,
+				(struct sockaddr*) &cli_addr, &cli_len);
+		if (recvReturn_i < 0)
+			perror("slave_main recv control msg error");
+		//perror("slave_main:recv from master failed");
+
+		printf("slave_main: received : %c \t clilen = %d \n", recvBuff[0], cli_len);
 
 		switch (recvBuff[0])
 		{
 		case 'i': ///identify self : send your Type to caller
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
-			printf("slave:slave_main:send identify:%d\n",
-					(int) sendto(recvMast_sock, &typeAndGroup[0], sizeof typeAndGroup, 0,
-							(struct sockaddr*) &cli_addr, cli_len));
+			//TODO take the return out
+			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 1, 0,
+					(struct sockaddr*) &cli_addr, cli_len);
+			printf("slave_main:send identify:%d\n", sendreturn);
+			if (sendreturn < 0)
+				perror("slave_main:send identify failed");
 			//no break
 		case 'k': ///keepalive
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
-				critErr("listen: mutex_lock:");
-			printf("+");
+				critErr("slave_main: mutex_lock:");
+			printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
-				critErr("listen: mutex_unlock:");
-			printf("-\n");
+				critErr("slave_main: mutex_unlock:");
+			printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		case 't': //timeout encountered by a node
-			printf("timeout signal received");
+			printf("slave_main:timeout signal received\n");
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
-				critErr("listen: mutex_lock:");
-			printf("+");
+				critErr("slave_main: mutex_lock:");
+			printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			*master_ptr = elect_master(electRecv_sock);
-			printf("master= %d", *master_ptr);
+			printf("slave_main:master= %d\n", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
-				critErr("listen: mutex_unlock:");
-			printf("-\n");
+				critErr("slave_main: mutex_unlock:");
+			printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		default:
-			printf("listen: Unknown symbol: recvBuff[0]=%c", recvBuff[0]);
+			printf("slave_main: Unknown symbol: recvBuff[0]=%c\n", recvBuff[0]);
 			close(recvMast_sock);
 			exit(2);
 		}
@@ -122,7 +132,7 @@ void *slave_main(void *args_ptr)
 
 int elect_master(int electRecv_sock)
 {
-	printf("electing master");
+	printf("slave:electing master:\n");
 	uint8_t typeMAC_self[IDENTIFIER_LENGTH];
 	typeMAC_self[0] = FPGATYPE;
 	typeMAC_self[7] = CLUSTERGROUP;
@@ -140,7 +150,7 @@ int elect_master(int electRecv_sock)
 //create UDP-Socket Server
 	if ((electSend_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		critErr("listen:send_master_socket=");
+		critErr("slave_main:send_master_socket=");
 	}
 	//Broadcast socket address
 	fillSockaddrBroad(&elect_addr, UDP_ELECT_M_PORT);

@@ -28,11 +28,11 @@
  */
 int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc);
 
-struct id_weight{
+struct id_weight
+{
 	xmlChar *id;
 	int weight;
 };
-
 
 xmlDocPtr XMLread(char *filename);
 
@@ -40,10 +40,9 @@ xmlDocPtr XMLread(char *filename);
  *
  *	this is a rather specific function for a personal usecase
  */
-void XMLCleanup(xmlDocPtr doc,xmlDocPtr doc2, int *values);
+void XMLCleanup(xmlDocPtr doc, xmlDocPtr doc2, int *values);
 
 static void print_element_names(xmlNode * a_node);
-
 
 /** \brief Creates a new xmlDoc which contains all data for the master
  *
@@ -54,8 +53,7 @@ static void print_element_names(xmlNode * a_node);
  *
  *	returns a pointer that has to be freed
  */
-xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_ptr,
-		int *values);
+xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_ptr, int *values);
 
 /** \brief searches through all children of an element for a child with the given name
  *

@@ -13,7 +13,6 @@
 #include <pthread.h>
 #include <time.h>
 
-
 #include "basics.h"
 #include "slave.h"
 #include "master.h"
@@ -22,13 +21,12 @@
 uint8_t mac[6];
 uint32_t ownIP; //in network format (htonl/inet_addr used)
 
-
 int main()
 {
 
-
 	getMAC(mac);
 	ownIP = getIP();
+
 	//getProgram(NULL);
 	//return 0;
 //
@@ -70,7 +68,7 @@ int main()
 
 	int mastBroad_sock;
 
-	struct sockaddr_in broad_addr, loop_addr;
+	struct sockaddr_in broad_addr, loop_addr, any_addr;
 	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
 
 	struct var_mtx timeCount_mtx_sct =
@@ -79,8 +77,7 @@ int main()
 	{ &timeCount_mtx_sct, &master_i, &subgroup_u8 };
 
 	pthread_t slave_thread;
-	if (pthread_create(&slave_thread, NULL, slave_main,
-			(void*) &slaveMain_args))
+	if (pthread_create(&slave_thread, NULL, slave_main, (void*) &slaveMain_args))
 	{
 		critErr("pthread_create(slave)=");
 	}
@@ -90,10 +87,17 @@ int main()
 	{
 		critErr("main:send_master_socket=");
 	}
+
+//	fillSockaddrAny(&any_addr, UDP_NODE_LISTEN_PORT);
+//
+//		if ((bind(mastBroad_sock, (struct sockaddr*) &any_addr, sizeof any_addr)) < 0)
+//		{
+//			critErr("main:bind rmastBroad_sock:");
+//		}
 	fcntl(mastBroad_sock, F_SETFL, O_NONBLOCK);
 	int broadcastEnable = 1;
-	int ret = setsockopt(mastBroad_sock, SOL_SOCKET, SO_BROADCAST,
-			&broadcastEnable, sizeof(broadcastEnable));
+	int ret = setsockopt(mastBroad_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable,
+			sizeof(broadcastEnable));
 	if (ret)
 		critErr("main: couldn't set setsockopt:");
 
@@ -103,17 +107,17 @@ int main()
 	// Timeout-counter for master communication
 	while (1)
 	{
-
-		if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
-			critErr("main: mutex_lock:");
-		//printf("<");
 		if (master_i)
 		{
-			printf("I am master and start control function mutex is locked\n");
+			printf("main:I am master and start control function counter mutex is not locked\n");
 			master_main(mastBroad_sock);
 			master_i = 0;
 		}
-		if (timeCount_mtx_sct.var > PING_PERIOD * TIMEOUT_PERIODS)
+		if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
+			critErr("main: mutex_lock:");
+		//printf("<");
+
+		if (timeCount_mtx_sct.var >3) //PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
@@ -135,10 +139,8 @@ int main()
 				//printf(">");
 
 				char timeout_detected = 't';
-				sendto(mastBroad_sock, &timeout_detected, 1, 0,
-						(struct sockaddr*) &broad_addr, broad_len);
-				sendto(mastBroad_sock, &timeout_detected, 1, 0,
-										(struct sockaddr*) &loop_addr, loop_len);
+				sendto(mastBroad_sock, &timeout_detected, 1, 0, (struct sockaddr*) &broad_addr, broad_len);
+				sendto(mastBroad_sock, &timeout_detected, 1, 0, (struct sockaddr*) &loop_addr, loop_len);
 				printf("timeout signal sent\n");
 
 			}
@@ -152,8 +154,7 @@ int main()
 		}
 		else
 		{
-			printf("main:increase timeCount_mtx_sct to:%d\n",
-					++timeCount_mtx_sct.var);
+			printf("main:increase timeCount_mtx_sct to:%d\n", ++timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: under_mutex_unlock:");
 			//printf(">\n");

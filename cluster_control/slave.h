@@ -55,7 +55,6 @@ struct recv_file
  */
 void *slave_main(void *args_struct);
 
-
 /** \brief communicataes with all other notes to find a new master
  *
  *  the system with the lowest type number (defiened in basics.h) will be master
@@ -89,7 +88,6 @@ void *receive_file(void * args);
  */
 void *fetchDataAndExecute(void *args);
 
-
 /** \brief generates an IP_list with the destination IPs
  *
  * returned pointer has to be freed after use
@@ -97,7 +95,6 @@ void *fetchDataAndExecute(void *args);
  * the IPs are taken only from <dest_IP> nodes on the first level after root
  *
  */
-struct IP_list  *getIPfromXML(xmlDocPtr doc);
-
+struct IP_list *getIPfromXML(xmlDocPtr doc);
 
 #endif /* SLAVE_H_ */
