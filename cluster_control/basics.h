@@ -114,9 +114,9 @@ struct cluster_info
 	/// list of the nodes
 	struct node_data *node_data_list_ptr;
 	/// amount of nodes for which memory is allocated
-	int size_i;
+	size_t size;
 	///actual number of nodes stored
-	int num_nodes_i;
+	size_t numNodes_size;
 	/// incrementing number for comparison with lastAlive
 	uint8_t alive_count_u8;
 	pthread_mutex_t mtx;

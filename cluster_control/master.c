@@ -13,6 +13,14 @@ char errormessage[100];
 
 #define BUFFERSIZE 1024
 
+void mypause ( void )
+{
+  printf ( "Press [Enter] to continue . . ." );
+  fflush ( stdout );
+  getchar();
+}
+
+
 int master_main(int mastBroad_sock)
 {
 
@@ -22,6 +30,18 @@ int master_main(int mastBroad_sock)
 	pthread_t listenForData_thread;
 	int master_i = 1, identify_counter_i = 1;
 
+//	int dummy_sock;
+//	if ((dummy_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+//		{
+//			critErr("master:dummy_socket=");
+//		}
+//	struct sockaddr_in any_addr;
+//	fillSockaddrAny(&any_addr, UDP_N2M_PORT);
+//
+//		if ((bind(dummy_sock, (struct sockaddr*) &any_addr, sizeof any_addr)) < 0)
+//		{
+//			critErr("master:bind dummy_sock:");
+//		}
 	struct cluster_info clusterInfo_sct;
 	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
 	EST_NUM_BOARD * sizeof(struct node_data));
@@ -34,8 +54,8 @@ int master_main(int mastBroad_sock)
 		printf("couldn't malloc node_data_list");
 		exit(5);
 	}
-	clusterInfo_sct.num_nodes_i = 0;
-	clusterInfo_sct.size_i = EST_NUM_BOARD;
+	clusterInfo_sct.numNodes_size = 0;
+	clusterInfo_sct.size = EST_NUM_BOARD;
 
 	struct get_Program getProgram_sct;
 	getProgram_sct.exitSignal = 0;
@@ -51,14 +71,30 @@ int master_main(int mastBroad_sock)
 
 	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
-	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
+
+
+
+	int dummy_sock;
+	 if ((dummy_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	 		{
+	 			critErr("master:dummy_socket=");
+	 		}
+	 fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
+	if ((bind(dummy_sock, (struct sockaddr*) &recv_addr, sizeof recv_addr)) < 0)
+	 		{
+	 			critErr("master:bind dummy_sock:");
+	 		}
+	fcntl(dummy_sock, F_SETFL, O_NONBLOCK);
 
 	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
+
 	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0, (struct sockaddr*) &loop_addr,
-			loop_len);
-	readIdentifyAnswers(mastBroad_sock, &clusterInfo_sct, 1);
-	printf("master:nodes in cluster = %d\n", clusterInfo_sct.num_nodes_i);
+		loop_len);
+
+	//TODO 1!! check for ip=0 and if local IP=ownIP  this may just be an issue with the vm
+	readIdentifyAnswers(dummy_sock, &clusterInfo_sct, 1);
+	printf("master:nodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
 
 	while (master_i)
 	{
@@ -66,10 +102,11 @@ int master_main(int mastBroad_sock)
 		{
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
+
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &loop_addr, loop_len);
-			updateClusterInfo(&clusterInfo_sct, mastBroad_sock);
-			printf("master:nodes in cluster = %d\n", clusterInfo_sct.num_nodes_i);
+			updateClusterInfo(&clusterInfo_sct, dummy_sock);
+			printf("master:nodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
 		}
 		else
 		{
@@ -90,14 +127,14 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 	printf("master: addNode started\n");
 	int size_i;
 	void *newList_ptr;
-	if (clusterInfo_ptr->num_nodes_i >= clusterInfo_ptr->size_i)
+	if (clusterInfo_ptr->numNodes_size >= clusterInfo_ptr->size)
 	{
-		size_i = clusterInfo_ptr->size_i + REALLOC_STEPSIZE;
+		size_i = clusterInfo_ptr->size + REALLOC_STEPSIZE;
 		newList_ptr = realloc(clusterInfo_ptr->node_data_list_ptr, size_i * sizeof(struct node_data));
 		if (newList_ptr != NULL)
 		{
 			clusterInfo_ptr->node_data_list_ptr = newList_ptr;
-			clusterInfo_ptr->size_i = size_i;
+			clusterInfo_ptr->size = size_i;
 		}
 		else
 		{
@@ -106,26 +143,29 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 			exit(5);
 		}
 	}
-	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32 = ip_u32;
-	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].type_u8 = typeAndGroup[0];
-	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].group_u8 = typeAndGroup[1];
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32 = ip_u32;
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].type_u8 = typeAndGroup[0];
+	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].group_u8 = typeAndGroup[1];
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 	clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
 	printf("ip=%u \t type = %u added\n",
-			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->num_nodes_i].ip_u32, typeAndGroup[0]);
+			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32, typeAndGroup[0]);
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
-	clusterInfo_ptr->num_nodes_i++;
+	clusterInfo_ptr->numNodes_size++;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 }
 
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
 {
+
 	printf("master:readIdentifyAnswers started\n");
 	int timeout_i = TIMEOUT, returnRecv_i;
 	uint8_t typeAndGroup[2];
+	uint32_t IP_holder;
 	struct sockaddr_in response_addr;
 	socklen_t response_len;
 	struct node_data *searchReturn_ptr;
+	struct node_data compare_node;
 
 	size_t typeAndGroup_size = sizeof typeAndGroup;
 	while (timeout_i > 0)
@@ -155,35 +195,44 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		}
 		else
 		{
+			IP_holder = ntohl(response_addr.sin_addr.s_addr);
+			if(IP_holder == 0 || IP_holder == 0x7F000001) //loopback
+				IP_holder = ntohl(ownIP);
 			if (newList_u8)
 			{
-				addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr), &typeAndGroup[0]);
-				printf("master:readIdentify: called addNode for new list");
+				addNode2List(clusterInfo_ptr, IP_holder, &typeAndGroup[0]);
+				printf("master:readIdentify: called addNode for new list\n");
 			}
 			else
 			{
-				searchReturn_ptr = (struct node_data*) bsearch(&(response_addr.sin_addr.s_addr),
-						clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+				compare_node.ip_u32=IP_holder;
+				searchReturn_ptr = (struct node_data*) bsearch(&compare_node,
+						clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 						sizeof(struct node_data), compareNodes);
 				if (searchReturn_ptr == NULL)
 				{
-					printf("master:readIdentify: called addNode for existing list");
-					addNode2List(clusterInfo_ptr, ntohl(response_addr.sin_addr.s_addr), &typeAndGroup[0]);
-					qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
+					printf("master:readIdentify: called addNode for existing list\n");
+					addNode2List(clusterInfo_ptr, IP_holder, &typeAndGroup[0]);
+					qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 							sizeof(struct node_data), compareNodes);
 				}
 				else
 				{
+					printf("master_readIdentify: node already exists ip=%u\n",searchReturn_ptr->ip_u32);
 					searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 				}
 			}
 		}
 
 	}
-	if (newList_u8)
-		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i,
-				sizeof(struct node_data), compareNodes);
 
+	if (newList_u8)
+		{printf("master:qsort for new list started\n");
+		mypause();
+		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
+				sizeof(struct node_data), compareNodes);
+		}
+printf("master:readIdentify finished\n");
 }
 
 void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
@@ -199,7 +248,8 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 
 	readIdentifyAnswers(receive_sock, clusterInfo_ptr, 0);
 
-	for (i = 0; i < clusterInfo_ptr->num_nodes_i; i++)
+	// remove non active nodes
+	for (i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
 		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8 != clusterInfo_ptr->alive_count_u8)
 		{
@@ -209,10 +259,10 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 			outdated_i++;
 		}
 	}
-	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->num_nodes_i, sizeof(struct node_data),
+	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size, sizeof(struct node_data),
 			compareNodes);
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
-	clusterInfo_ptr->num_nodes_i = clusterInfo_ptr->num_nodes_i - outdated_i;
+	clusterInfo_ptr->numNodes_size = clusterInfo_ptr->numNodes_size - outdated_i;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 
 }
@@ -437,9 +487,9 @@ void* createDistributionXML(void *args)
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	values = XMLGetMinNodeAndTotalWeight(inputXML);
 
-	if (values[MIN_SHIFT] > clusterInfo_ptr->num_nodes_i)
+	if (values[MIN_SHIFT] > clusterInfo_ptr->numNodes_size)
 	{
-		printf("too few nodes available\t available =%d\t needed =%d\n", clusterInfo_ptr->num_nodes_i,
+		printf("too few nodes available\t available =%d\t needed =%d\n", clusterInfo_ptr->numNodes_size,
 				values[MIN_SHIFT]);
 		pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 		return NULL;

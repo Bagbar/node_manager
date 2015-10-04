@@ -92,7 +92,8 @@ void *slave_main(void *args_ptr)
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
 			//TODO take the return out
-			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 1, 0,
+			cli_addr.sin_port= htons(UDP_N2M_PORT);
+			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
 					(struct sockaddr*) &cli_addr, cli_len);
 			printf("slave_main:send identify:%d\n", sendreturn);
 			if (sendreturn < 0)
@@ -101,23 +102,23 @@ void *slave_main(void *args_ptr)
 		case 'k': ///keepalive
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
-			printf("slave_main: MUTEX LOCKED\n");
+			//printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_unlock:");
-			printf("slave_main: MUTEX UNLOCKED\n");
+			//printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		case 't': //timeout encountered by a node
 			printf("slave_main:timeout signal received\n");
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
-			printf("slave_main: MUTEX LOCKED\n");
+			//printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			*master_ptr = elect_master(electRecv_sock);
 			printf("slave_main:master= %d\n", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_unlock:");
-			printf("slave_main: MUTEX UNLOCKED\n");
+			//printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		default:
 			printf("slave_main: Unknown symbol: recvBuff[0]=%c\n", recvBuff[0]);

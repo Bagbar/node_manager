@@ -119,7 +119,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	float rest, accumulatedRest = 0.0;
 	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
 	rootNew = xmlNewNode(NULL, (const xmlChar*) "Nodes");
-	restNodes_i = clusterInfo_ptr->num_nodes_i - values[MIN_SHIFT];
+	restNodes_i = clusterInfo_ptr->numNodes_size - values[MIN_SHIFT];
 	if (values[WEIGHT_SHIFT] > 0)
 	{
 		additionalNodes_i = restNodes_i / values[WEIGHT_SHIFT];
@@ -135,11 +135,11 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	printf("new Doc generated\n");
 	char IP_str[11];
 	//pthread_mutex_lock(&clusterInfo_ptr->mtx);
-	restNodes_i = clusterInfo_ptr->num_nodes_i - values[MIN_SHIFT];
-	printf("numnodes = %d\n", clusterInfo_ptr->num_nodes_i);
+	restNodes_i = clusterInfo_ptr->numNodes_size - values[MIN_SHIFT];
+	printf("numnodes = %d\n", clusterInfo_ptr->numNodes_size);
 
 	// generate entry for every available node
-	for (int i = 0; i < clusterInfo_ptr->num_nodes_i; i++)
+	for (int i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
 		printf("%d", i);
 		sprintf(IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);

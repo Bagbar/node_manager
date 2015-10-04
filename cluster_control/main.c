@@ -27,18 +27,21 @@ int main()
 	getMAC(mac);
 	ownIP = getIP();
 
-	//getProgram(NULL);
-	//return 0;
-//
-//	xmlDocPtr inputXML = xmlParseFile(filename);
-//
+	printf("ownIP = %u\n",ownIP);
+	printf("ownIP = %s\n",networkToDottedIP(ownIP));
+	printf("ownIP = %s\n",networkToDottedIP(ntohl(ownIP)));
+
+
+
+	//xmlDocPtr inputXML = xmlParseFile(filename);
+
 //	struct cluster_info clusterInfo_sct;
 //	clusterInfo_sct.node_data_list_ptr = (struct node_data*) malloc(
 //		EST_NUM_BOARD * sizeof(struct node_data));
 //		clusterInfo_sct.alive_count_u8 = 1;
 //		pthread_mutex_init(&clusterInfo_sct.mtx,NULL);
-//		clusterInfo_sct.num_nodes_i = 0;
-//			clusterInfo_sct.size_i = EST_NUM_BOARD;
+//		clusterInfo_sct.numNodes_size = 0;
+//			clusterInfo_sct.size = EST_NUM_BOARD;
 //			uint8_t typeAndGroup[2]= {1,1};
 //			addNode2List(&clusterInfo_sct,0x11111111,typeAndGroup);
 //			addNode2List(&clusterInfo_sct,0x11111112,typeAndGroup);
@@ -49,6 +52,20 @@ int main()
 //			addNode2List(&clusterInfo_sct,0x11111110,typeAndGroup);
 //			addNode2List(&clusterInfo_sct,ownIP,typeAndGroup);
 //			addNode2List(&clusterInfo_sct,0x10101010,typeAndGroup);
+//
+//			struct node_data compare_node;
+//			compare_node.ip_u32=0x11111110;
+//			printf("%d\n",clusterInfo_sct.size);
+//			printf("ownIP =%X,%p \t ipinlist=%X,%p\n",ownIP,&ownIP,clusterInfo_sct.node_data_list_ptr[7].ip_u32,&clusterInfo_sct.node_data_list_ptr[7].ip_u32);
+//			printf("compare11 = %d",compareNodes(clusterInfo_sct.node_data_list_ptr,&clusterInfo_sct.node_data_list_ptr[0]));
+//			printf("compare21 = %d",compareNodes(&clusterInfo_sct.node_data_list_ptr[1],&clusterInfo_sct.node_data_list_ptr[0]));
+//			printf("compare12 = %d\n",compareNodes(&clusterInfo_sct.node_data_list_ptr[0],&clusterInfo_sct.node_data_list_ptr[1]));
+//			qsort(clusterInfo_sct.node_data_list_ptr, clusterInfo_sct.numNodes_size, sizeof(struct node_data),
+//						compareNodes);
+//			printf("search = %p\n",bsearch(&compare_node,clusterInfo_sct.node_data_list_ptr,clusterInfo_sct.numNodes_size,sizeof(struct node_data),compareNodes));
+//			printf("search = %p\n",bsearch(&clusterInfo_sct.node_data_list_ptr[8],clusterInfo_sct.node_data_list_ptr,clusterInfo_sct.numNodes_size,sizeof(struct node_data),compareNodes));
+//			printf("finish");
+//			return 0;
 //
 //
 //	int *nodeAndWeight = XMLGetMinNodeAndTotalWeight(inputXML);
