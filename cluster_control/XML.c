@@ -73,7 +73,7 @@ int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 				}
 				else
 				{
-					printf("XMLGetMinNodeAndTotalWeight: unknown Node type");
+					printf("XMLGetMinNodeAndTotalWeight: unknown Node type\n");
 					return NULL;
 				}
 			}
@@ -141,7 +141,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	// generate entry for every available node
 	for (int i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
-		printf("%d", i);
+		printf("%d\n", i);
 		sprintf(IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);
 		printf("listip=%u\townIP=%u\n", clusterInfo_ptr->node_data_list_ptr[i].ip_u32, ownIP);
 		curNew = xmlNewChild(rootNew, NULL, (xmlChar *) IP_str, NULL);
@@ -157,7 +157,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 			curNew->children = masterOld->children;
 		}
 	}
-	printf("forloop finished \n");
+	printf("XML:build complete:forloop finished \n");
 	//pthread_mutex_unlock(&clusterInfo_ptr->mtx);
 	curNew = rootNew->children;
 	if (curNew == NULL)
@@ -218,7 +218,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 						printf("min_i = %d \t additional=%d\n", min_i, additionalNodes_i);
 						if ((min_i + additionalNodes_i + (int) accumulatedRest) > max_i)
 						{
-							printf("sum=%d", (min_i + additionalNodes_i + (int) accumulatedRest));
+							printf("sum=%d\n", (min_i + additionalNodes_i + (int) accumulatedRest));
 							parallelNodes_i = max_i;
 							usedRestNodes_i = usedRestNodes_i + parallelNodes_i - min_i;
 						}
@@ -261,7 +261,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		}
 		curOld = curOld->next;
 	}
-	printf("saving file");
+	printf("saving file\n");
 	xmlSaveFile("intermediate.xml", docNew);
 	xmlDocPtr newXMLdoc = xmlParseFile("intermediate.xml");
 	xmlNodePtr root = xmlDocGetRootElement(newXMLdoc);
@@ -289,7 +289,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 							curNew->name, destSearch->name, id_str, destination_str);
 					if (!xmlStrcmp(id_str, destination_str))
 					{
-						printf("%s", &(destSearch->name[3]));
+						printf("%s\n", &(destSearch->name[3]));
 						//exit(0);
 						xmlNewChild(curNew, NULL, (xmlChar*) "dest_IP", &(destSearch->name[3]));
 					}
@@ -311,6 +311,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	XMLremoveUnusedNodes(newXMLdoc);
 	xmlSaveFile(OUTPUT_XML_NAME, newXMLdoc);
 	xmlFree(docNew);
+	printf("XML DONE\n");
 	return newXMLdoc;
 }
 

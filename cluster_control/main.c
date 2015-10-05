@@ -134,7 +134,7 @@ int main()
 			critErr("main: mutex_lock:");
 		//printf("<");
 
-		if (timeCount_mtx_sct.var >3) //PING_PERIOD * TIMEOUT_PERIODS)
+		if (timeCount_mtx_sct.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))

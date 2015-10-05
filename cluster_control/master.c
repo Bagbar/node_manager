@@ -24,7 +24,7 @@ void mypause ( void )
 int master_main(int mastBroad_sock)
 {
 
-	printf("master_main started\n");
+	//printf("master_main started\n");
 	char keep_alive_c = KEEP_ALIVE_SIGNAL, identify_node_c = IDENTIFY_SIGNAL;
 
 	pthread_t listenForData_thread;
@@ -119,14 +119,14 @@ int master_main(int mastBroad_sock)
 
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
-		printf("master:identify_counter=%d\n", identify_counter_i);
+		//printf("master:identify_counter=%d\n", identify_counter_i);
 	}
 	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
 }
 void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t *typeAndGroup)
 {
-	printf("master: addNode started\n");
+	//printf("master: addNode started\n");
 	int size_i;
 	void *newList_ptr;
 	if (clusterInfo_ptr->numNodes_size >= clusterInfo_ptr->size)
@@ -160,7 +160,7 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
 {
 
-	printf("master:readIdentifyAnswers started\n");
+	//printf("master:readIdentifyAnswers started\n");
 	int timeout_i = TIMEOUT, returnRecv_i;
 	uint8_t typeAndGroup[2];
 	uint32_t IP_holder;
@@ -175,7 +175,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		// Receive msg from other boards
 		returnRecv_i = recvfrom(receive_sock, &typeAndGroup[0], typeAndGroup_size, 0,
 				(struct sockaddr*) &response_addr, &response_len);
-		printf("master:readIdentifyAnswers: receive_return : %d\n", returnRecv_i);
+		//printf("master:readIdentifyAnswers: receive_return : %d\n", returnRecv_i);
 		if (returnRecv_i != typeAndGroup_size)
 		{
 			if (returnRecv_i == -1)
@@ -213,14 +213,14 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 						sizeof(struct node_data), compareNodes);
 				if (searchReturn_ptr == NULL)
 				{
-					printf("master:readIdentify: called addNode for existing list\n");
+					//printf("master:readIdentify: called addNode for existing list\n");
 					addNode2List(clusterInfo_ptr, IP_holder, &typeAndGroup[0]);
 					qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 							sizeof(struct node_data), compareNodes);
 				}
 				else
 				{
-					printf("master_readIdentify: node already exists ip=%u\t IPdotted=%s\n",searchReturn_ptr->ip_u32,hostToDottedIP(searchReturn_ptr->ip_u32));
+					//printf("master_readIdentify: node already exists ip=%u\t IPdotted=%s\n",searchReturn_ptr->ip_u32,hostToDottedIP(searchReturn_ptr->ip_u32));
 					searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 				}
 			}
@@ -229,16 +229,16 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 	}
 
 	if (newList_u8)
-		{printf("master:qsort for new list started\n");
+		{//printf("master:qsort for new list started\n");
 		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 				sizeof(struct node_data), compareNodes);
 		}
-printf("master:readIdentify finished\n");
+//printf("master:readIdentify finished\n");
 }
 
 void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
-	printf("master: updateClusterInfo: start\n");
+	//printf("master: updateClusterInfo: start\n");
 	int i, outdated_i = 0;
 //	int timeout_i = TIMEOUT, returnRecv_i;
 //
@@ -254,9 +254,10 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	{
 		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8 != clusterInfo_ptr->alive_count_u8)
 		{
+			//printf("master: update Info : removing node counter = %d\t ip = %d \t dotted:%s\n",clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8,clusterInfo_ptr->node_data_list_ptr[i].ip_u32,hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[i].ip_u32));
 			clusterInfo_ptr->node_data_list_ptr[i].ip_u32 = -1;
 			clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
-			printf("master: update Info :node removed\n");
+
 			outdated_i++;
 		}
 	}
@@ -270,6 +271,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 
 void *sendInfo(void *args)
 {
+	printf("master:sending_info\n");
 	struct send_info *send_info_ptr = args;
 	uint8_t check_u8;
 	struct fileInfo_bufferformat sendBuff;
@@ -304,6 +306,7 @@ void *sendInfo(void *args)
 			printf("master: send_info: check_failed ->retry\n");
 	} while (check_u8 != CHECK_OKAY);
 	close(return_socket);
+	printf("master:send info:finished\n");
 	return NULL;
 
 }
@@ -312,7 +315,7 @@ void *sendFile(void *args)
 	struct send_file *sendFile_ptr = args;
 	uint8_t check_u8;
 	int i;
-
+	printf("master:sending_file\n");
 	char sendBuff[BUFFERSIZE];
 	memset(sendBuff, '0', sizeof(sendBuff));
 	int return_send;
@@ -367,11 +370,13 @@ void *sendFile(void *args)
 			sleep(1);
 		}
 	} while (check_u8 != CHECK_OKAY);
+	printf("master:send file:finished\n");
 	return NULL;
 }
 
 void* getFilesAndSend(void* args)
 {
+	printf("getfilesandsend started \n");
 	xmlNodePtr node = args, child = NULL;
 
 	struct send_info sendInfo_sct;
@@ -441,7 +446,7 @@ void* getFilesAndSend(void* args)
 		puts(errormessage);
 		return errormessage; //FIXME maybe not ideal to give that address back but works for now
 	}
-
+	printf("master:getFileandSend: endOfString = %d\n",endOfString_i);
 	if (endOfString_i > 0) //i is the position of ".tar" in the filename for the archive if 0 no archive was generated
 	{
 		if (localname == filename)
@@ -465,7 +470,7 @@ void* getFilesAndSend(void* args)
 
 	sendFile_sct.IP = sendInfo_sct.IP;
 	sendFile_sct.filename = filename;
-
+	printf("master:getfilesandsend: calling send functions\n");
 	sendInfo(&sendInfo_sct);
 	sendFile(&sendFile_sct);
 	printf("master:get files and send: %s sent successfully\n", sendFile_sct.filename);
@@ -574,33 +579,33 @@ void * getProgram(void * args)
 
 		}
 
-		printf("received:%s\n", listenBuff);
+		printf("master:getProgram:received:%s\n", listenBuff);
 		if (!strcmp(listenBuff, "fetch"))
 		{
 
 			sendto(waitForBroadcast_sock, &ack[0], sizeof ack, 0, (struct sockaddr*) &connect_addr,
 					connect_len);
-			sleep(2);
+			sleep(3);
 			connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
-			printf("connecting\n");
+			printf("master:getProgram: connecting\n");
 			int return_connect = connect(openConnection_sock, (struct sockaddr*) &connect_addr,
 					connect_len);
 			if (return_connect < 0)
 				critErr("master: getProgram: connecterror");
-			pFile = fopen("data.tar.gz", "wb");
+			pFile = fopen("data.tar", "wb");
 			if (pFile == NULL)
 			{
-				fputs("File error", stderr);
+				fputs("master:getProgram: File error", stderr);
 				exit(1);
 			}
-			printf("receiving file\n");
+			printf("master:getProgram: receiving file\n");
 			do
 			{
 				recvReturn_i = recv(openConnection_sock, &recvBuffer[0], BUFFERSIZE, 0);
 				if (recvReturn_i < 0)
-					printf("recverror:%s\n", strerror(errno));
+					printf("master:getProgram: recverror:%s\n", strerror(errno));
 				else
-					printf("recv data = %d\n", recvReturn_i);
+					printf("master:getProgram: recv data = %d\n", recvReturn_i);
 
 				fwrite(&recvBuffer[0], 1, recvReturn_i, pFile);
 			} while (recvReturn_i > 0);
@@ -610,10 +615,11 @@ void * getProgram(void * args)
 			received = 1;
 		}
 	} while (received == 0);
-
+	system("tar xf data.tar");
 	Distribution_ptr = createDistributionXML(getProgram_ptr->clusterInfo_ptr);
 
 	char * ret;
+	printf("master:get Program: dist ptr = %p",Distribution_ptr);
 	if (Distribution_ptr)
 		ret = distributeData(Distribution_ptr);
 
@@ -634,6 +640,7 @@ void * getProgram(void * args)
 
 void * distributeData(void * args)
 {
+	printf("master:distributeDAta started");
 	xmlDocPtr doc = args;
 	char * errormarker = NULL;
 
@@ -678,8 +685,9 @@ void * distributeData(void * args)
 					exit(5);
 				}
 			}
-
-			pthread_create((&send_threads[thread_i]), NULL, getFilesAndSend, (void*) node);
+			getFilesAndSend(node);
+			//pthread_create((&send_threads[thread_i]), NULL, getFilesAndSend, (void*) node);
+			printf("master:distribute data:getFilesAndSend thread created");
 			thread_i++;
 
 		}
@@ -690,7 +698,8 @@ void * distributeData(void * args)
 	for (int i = 0; i < allocatedThreads_i; i++)
 	{
 		char * ret;
-		pthread_join(send_threads[i], (void **) &ret);
+		//pthread_join(send_threads[i], (void **) &ret);
+		printf("master:distribute data:getFilesAndSend thread joined");
 		if (ret)
 			errormarker = ret;
 	}

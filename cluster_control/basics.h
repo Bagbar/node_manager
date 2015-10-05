@@ -23,7 +23,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define ARCHIVE_NAME "archive.tar.gz"
+#define ARCHIVE_NAME "archive.tar"
 #define OUTPUT_XML_NAME "output.xml"
 #define INPUT_XML_NAME "input.xml"
 #define CHECK_OKAY 0
@@ -62,7 +62,7 @@
 #define TCP_RECV_DATA_PORT 40001 //receive the data that has to be processed
 
 //this has to be adjusted for the FPGA in use
-#define FPGATYPE ZYNQ7000
+#define FPGATYPE SERVER
 //everyone with the same number shall be in the same subgroup (not active)
 #define CLUSTERGROUP 0
 

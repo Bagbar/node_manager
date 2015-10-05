@@ -25,6 +25,19 @@
 
 #define BUFFERSIZE 1024
 
+char* hostToDottedIP(uint32_t ip)
+{
+
+	unsigned char bytes[4];
+	char *IP = malloc(16);
+	bytes[0] = ip & 0xFF;
+	bytes[1] = (ip >> 8) & 0xFF;
+	bytes[2] = (ip >> 16) & 0xFF;
+	bytes[3] = (ip >> 24) & 0xFF;
+	sprintf(IP, "%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);
+	return IP;
+}
+
 int main(int argc, const char* argv[])
 {
 	printf("%d\n",argc);
@@ -46,7 +59,7 @@ int main(int argc, const char* argv[])
 		}
 		printf("opened: %s\n",argv[1]);
 		struct sockaddr_in broadcast_addr, connect_addr, master_addr;
-		socklen_t broadcast_len = sizeof broadcast_addr, connect_len = sizeof connect_addr, master_len;
+		socklen_t broadcast_len = sizeof broadcast_addr, connect_len = sizeof connect_addr, master_len= sizeof master_addr;
 
 		if ((broadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		{
@@ -71,6 +84,9 @@ int main(int argc, const char* argv[])
 		broadcast_addr.sin_port = htons(UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER);
 		broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
+		connect_addr.sin_family = AF_INET;
+		connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
+		connect_addr.sin_addr.s_addr=htonl(INADDR_ANY);
 		printf("sending broadcast\n");
 		returnSend_i = sendto(broadcast_sock, &broadSendBuff[0], sizeof broadSendBuff, 0,
 				(struct sockaddr*) &broadcast_addr, broadcast_len);
@@ -81,17 +97,23 @@ int main(int argc, const char* argv[])
 		recvReturn_i = recvfrom(broadcast_sock, &broadRecvBuff[0], 10, 0,
 				(struct sockaddr*) &master_addr, &master_len);
 		printf("received\n");
-		connect_addr.sin_family = AF_INET;
-		connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
-		connect_addr.sin_addr.s_addr = master_addr.sin_addr.s_addr;
-		printf("bind\n");
+
+		//connect_addr.sin_addr.s_addr = master_addr.sin_addr.s_addr;
+		printf("bind master IP = %d\n",hostToDottedIP( ntohl(connect_addr.sin_addr.s_addr)));
 		int return_bind = bind(transfer_sock, (struct sockaddr*) &connect_addr, connect_len);
+		if(return_bind <0)
+		{
+			printf("bind error=%d",errno);
+			exit(1);
+		}
 		listen(transfer_sock, 1);
 
 		printf("connection ack\n");
 		if (!strcmp(broadRecvBuff, "ack"))
 		{
+			printf("waiting for accept\n");
 			int return_accept = accept(transfer_sock,NULL,NULL);
+			printf("accepted\n");
 			if (return_accept < 0)
 				printf("accepterror:%s\n", strerror(errno));
 
@@ -117,7 +139,7 @@ int main(int argc, const char* argv[])
 		close(transfer_sock);
 		close(broadcast_sock);
 
-
+		printf("finished");
 		return 0;
 	}
 

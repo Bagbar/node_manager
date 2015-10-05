@@ -74,7 +74,7 @@ void *slave_main(void *args_ptr)
 	while (1)
 	{
 
-		printf("slave_main: wait for message:\n");
+		//printf("slave_main: wait for message:\n");
 		// Receive msg from master,
 
 		recvReturn_i = recvfrom(recvMast_sock, &recvBuff[0], (size_t) 1, 0,
@@ -83,7 +83,7 @@ void *slave_main(void *args_ptr)
 		if (recvReturn_i < 0)
 			perror("slave_main: recv control msg error");
 
-		printf("slave_main: received : %c \t from= %s \n", recvBuff[0], hostToDottedIP(ntohl(cli_addr.sin_addr.s_addr)));
+		//printf("slave_main: received : %c \t from= %s \n", recvBuff[0], hostToDottedIP(ntohl(cli_addr.sin_addr.s_addr)));
 
 		switch (recvBuff[0])
 		{
@@ -95,33 +95,33 @@ void *slave_main(void *args_ptr)
 			//printf("slave:\t\tcli_addr.sinfamily = %d\n",cli_addr.sin_family);
 			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
 					(struct sockaddr*) &cli_addr, cli_len);
-			printf("slave_main:send identify:%d\n", sendreturn);
+			//printf("slave_main:send identify:%d\n", sendreturn);
 			if (sendreturn < 0)
 				perror("slave_main:send identify failed");
 			//no break
 		case 'k': ///keepalive
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
-			//printf("slave_main: MUTEX LOCKED\n");
+			////printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_unlock:");
-			//printf("slave_main: MUTEX UNLOCKED\n");
+			////printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		case 't': //timeout encountered by a node
-			printf("slave_main:timeout signal received\n");
+			//printf("slave_main:timeout signal received\n");
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
-			//printf("slave_main: MUTEX LOCKED\n");
+			////printf("slave_main: MUTEX LOCKED\n");
 			timeoutCounter_ptr->var = 0;
 			*master_ptr = elect_master(electRecv_sock);
-			printf("slave_main:master= %d\n", *master_ptr);
+			//printf("slave_main:master= %d\n", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_unlock:");
-			//printf("slave_main: MUTEX UNLOCKED\n");
+			////printf("slave_main: MUTEX UNLOCKED\n");
 			break;
 		default:
-			printf("slave_main: Unknown symbol: recvBuff[0]=%c\n", recvBuff[0]);
+			//printf("slave_main: Unknown symbol: recvBuff[0]=%c\n", recvBuff[0]);
 			close(recvMast_sock);
 			exit(2);
 		}
@@ -213,6 +213,8 @@ int elect_master(int electRecv_sock)
 				else
 					printf("I'm the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n", i,
 							typeMAC_other[i], typeMAC_self[i]);
+				if(typeMAC_other[i] > typeMAC_self[i])
+					i=IDENTIFIER_LENGTH;
 				i++;
 			}
 		}
@@ -273,6 +275,7 @@ void *receive_info(void * args)
 		if (check_u8 == CHECK_OKAY)
 		{
 		}
+		printf("slave:receive file: finished");
 		return NULL;
 	}
 }
@@ -348,6 +351,7 @@ void *receive_file(void * args)
 		printf("slave:receive_file: couldn't receive archive");
 		exit(6);
 	}
+	printf("slave:receive file: finished");
 	return NULL;
 }
 

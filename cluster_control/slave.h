@@ -21,7 +21,7 @@
 #include "XML.h"
 #include "basics.h"
 
-#define NODE_ARCHIVE_NAME "data.tar.gz"
+#define NODE_ARCHIVE_NAME "nodedata.tar.gz"
 
 ///container for target IP addresses
 struct IP_list
