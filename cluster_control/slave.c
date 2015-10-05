@@ -252,7 +252,7 @@ void *receive_info(void * args)
 	listen(return_socket, 1);
 
 	while (1)
-	{
+	{ printf("slave:receiveInfo: accept waiting");
 		int return_accept = accept(return_socket, (struct sockaddr*) &client, &len);
 		if (return_accept < 0)
 		{
