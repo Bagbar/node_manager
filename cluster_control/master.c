@@ -89,24 +89,26 @@ int master_main(int mastBroad_sock)
 	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
 
-	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0, (struct sockaddr*) &loop_addr,
+	/*sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0, (struct sockaddr*) &loop_addr,
 		loop_len);
+*/
 
-	//TODO 1!! check for ip=0 and if local IP=ownIP  this may just be an issue with the vm
 	readIdentifyAnswers(dummy_sock, &clusterInfo_sct, 1);
-	printf("master:nodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
+
+	printf("master:\t\tnodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
 
 	while (master_i)
 	{
 		if (identify_counter_i == 0)
 		{
+
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &broad_addr, broad_len);
 
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &loop_addr, loop_len);
 			updateClusterInfo(&clusterInfo_sct, dummy_sock);
-			printf("master:nodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
+			printf("master:\t\tnodes in cluster = %d\n", clusterInfo_sct.numNodes_size);
 		}
 		else
 		{
@@ -148,8 +150,8 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 	clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].group_u8 = typeAndGroup[1];
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 	clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
-	printf("ip=%u \t type = %u added\n",
-			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32, typeAndGroup[0]);
+	printf("ip=%u \t type = %u added \t IP_dotted=%s\n",
+			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32, typeAndGroup[0],hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32 ));
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->numNodes_size++;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
@@ -163,7 +165,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 	uint8_t typeAndGroup[2];
 	uint32_t IP_holder;
 	struct sockaddr_in response_addr;
-	socklen_t response_len;
+	socklen_t response_len = sizeof response_addr;
 	struct node_data *searchReturn_ptr;
 	struct node_data compare_node;
 
@@ -185,7 +187,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 						sleep(1);
 				}
 				else
-					critErr("elect:read broadcast socket:");
+					critErr("master:readIdentifyAnswers: recvfrom");
 			}
 			else
 			{
@@ -197,11 +199,11 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		{
 			IP_holder = ntohl(response_addr.sin_addr.s_addr);
 			if(IP_holder == 0 || IP_holder == 0x7F000001) //loopback
-				IP_holder = ntohl(ownIP);
+				IP_holder =ownIP;
 			if (newList_u8)
 			{
 				addNode2List(clusterInfo_ptr, IP_holder, &typeAndGroup[0]);
-				printf("master:readIdentify: called addNode for new list\n");
+				//printf("master:readIdentify: called addNode for new list\n");
 			}
 			else
 			{
@@ -218,7 +220,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 				}
 				else
 				{
-					printf("master_readIdentify: node already exists ip=%u\n",searchReturn_ptr->ip_u32);
+					printf("master_readIdentify: node already exists ip=%u\t IPdotted=%s\n",searchReturn_ptr->ip_u32,hostToDottedIP(searchReturn_ptr->ip_u32));
 					searchReturn_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 				}
 			}
@@ -228,7 +230,6 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 
 	if (newList_u8)
 		{printf("master:qsort for new list started\n");
-		mypause();
 		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 				sizeof(struct node_data), compareNodes);
 		}

@@ -25,11 +25,11 @@ int main()
 {
 
 	getMAC(mac);
-	ownIP = getIP();
+	ownIP = ntohl(getIP());
 
 	printf("ownIP = %u\n",ownIP);
-	printf("ownIP = %s\n",networkToDottedIP(ownIP));
-	printf("ownIP = %s\n",networkToDottedIP(ntohl(ownIP)));
+	printf("ownIP = %s\n",hostToDottedIP(ownIP));
+	printf("ownIP = %s\n",hostToDottedIP(ntohl(ownIP)));
 
 
 

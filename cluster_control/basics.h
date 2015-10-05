@@ -160,7 +160,7 @@ int compareNodes(const void * a, const void * b);
 /** returns a pointer to char array with the dotted notation of the IP
  *  pointer has to be freed
  */
-char* networkToDottedIP(uint32_t ip);
+char* hostToDottedIP(uint32_t ip);
 
 // BASICS_H_INCLUDED
 #endif

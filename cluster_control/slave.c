@@ -38,8 +38,8 @@ void *slave_main(void *args_ptr)
 	int recvMast_sock, electRecv_sock;
 
 	struct sockaddr_in serv_addr, elect_recv_addr, cli_addr;
-	socklen_t cli_len;
-
+	socklen_t cli_len = sizeof cli_addr;
+	cli_addr.sin_family =AF_INET;
 	//create UDP-Socket receiver for control commands
 	if ((recvMast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
@@ -76,23 +76,23 @@ void *slave_main(void *args_ptr)
 
 		printf("slave_main: wait for message:\n");
 		// Receive msg from master,
-		recvBuff[0] = 'X';
-		cli_len = 0;
+
 		recvReturn_i = recvfrom(recvMast_sock, &recvBuff[0], (size_t) 1, 0,
 				(struct sockaddr*) &cli_addr, &cli_len);
-		if (recvReturn_i < 0)
-			perror("slave_main recv control msg error");
-		//perror("slave_main:recv from master failed");
 
-		printf("slave_main: received : %c \t clilen = %d \n", recvBuff[0], cli_len);
+		if (recvReturn_i < 0)
+			perror("slave_main: recv control msg error");
+
+		printf("slave_main: received : %c \t from= %s \n", recvBuff[0], hostToDottedIP(ntohl(cli_addr.sin_addr.s_addr)));
 
 		switch (recvBuff[0])
 		{
 		case 'i': ///identify self : send your Type to caller
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
-			//TODO take the return out
+			//printf("cli_addr.sinfamily = %d\n",cli_addr.sin_family);
 			cli_addr.sin_port= htons(UDP_N2M_PORT);
+			//printf("slave:\t\tcli_addr.sinfamily = %d\n",cli_addr.sin_family);
 			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
 					(struct sockaddr*) &cli_addr, cli_len);
 			printf("slave_main:send identify:%d\n", sendreturn);
@@ -176,7 +176,7 @@ int elect_master(int electRecv_sock)
 	while (best_i == 1 && timeout_i > 0)
 	{
 		// Receive msg from other boards
-		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_self), 0, NULL, NULL);
+		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_other), 0, NULL, NULL);
 
 		printf("returnrecv=%d\t", recvReturn_i);
 		if (recvReturn_i != sizeof(typeMAC_self))
@@ -191,7 +191,7 @@ int elect_master(int electRecv_sock)
 						sleep(1);
 				}
 				else
-					critErr("elect:read broadcast socket:");
+					critErr("slave:elect:recvfrom:");
 			}
 			else
 			{
