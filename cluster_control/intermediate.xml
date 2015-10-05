@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<Nodes><IP_3232235779 id="1">
+    <destination>master</destination>
+    <files>
+      <work>dummy_work</work>
+      <script>dummy_script.sh</script>
+    </files>
+  </IP_3232235779><IP_3232235780/><IP_3232235782 id="master">
+    <destination>1</destination>
+    <files>
+      <work>dummy_work</work>
+      <script>dummy_script.sh</script>
+    </files>
+  </IP_3232235782></Nodes>
