@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<IP_3232235782 id="master">
-    <destination>1</destination>
-    <files>
-      <work>dummy_work</work>
-      <script>dummy_script.sh</script>
-    </files>
-  <dest_IP>3232235779</dest_IP></IP_3232235782>
