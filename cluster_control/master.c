@@ -273,13 +273,15 @@ void *sendInfo(void *args)
 	struct send_info *send_info_ptr = args;
 	uint8_t check_u8;
 	struct fileInfo_bufferformat sendBuff;
+	//printf("master:sendInfo: filesize = %d\n",sendBuff.file_size);
 	sendBuff.file_size = send_info_ptr->file_size;
+	sendBuff.cancel = 0;
 	memset(sendBuff.scriptname, 0, FILENAME_SIZE);
 	memset(sendBuff.workname, 0, FILENAME_SIZE);
 	strcpy(sendBuff.scriptname, send_info_ptr->scriptname);
 	strcpy(sendBuff.workname, send_info_ptr->workname);
-	sendBuff.file_size=send_info_ptr->file_size;
-	printf("master:sendinfo: filesize = %d",sendBuff.file_size);
+	sendBuff.file_size = send_info_ptr->file_size;
+	//printf("master:sendinfo: filesize = %d\n",sendBuff.file_size);
 
 	struct sockaddr_in dest_addr;
 	dest_addr.sin_family = AF_INET;
@@ -293,10 +295,11 @@ void *sendInfo(void *args)
 	int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr));
 	if (return_connect < 0)
 		critErr("master: send_info: connecterror");
-	printf("master:send_info: send \n");
+	printf("master:send_info: send buffersize =%d \n", sizeof sendBuff);
 	do
 	{
-		int return_send = send(return_socket, &sendBuff, sizeof(sendBuff), 0);
+
+		int return_send = send(return_socket, &sendBuff, sizeof sendBuff, 0);
 		if (return_send < 0)
 			printf("master: send_info: senderror:%s\n", strerror(errno));
 
@@ -363,16 +366,21 @@ void *sendFile(void *args)
 		fclose(pFile);
 		printf("master:send_file:file_sent:%s\n", sendFile_ptr->filename);
 		if (close(return_socket) < 0)
-					printf("closeerror:%s\n", strerror(errno));
+			printf("closeerror:%s\n", strerror(errno));
+
+		return_socket = socket(AF_INET, SOCK_STREAM, 0);
+		if (return_socket < 0)
+			critErr("master:send_info: socket error:");
+
 		if (return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr)))
-			critErr("master:send_info: recv check :connect error:");
+			critErr("master:send_file: recv check :connect error:");
 		recv(return_socket, &check_u8, 1, 0);
 
 		if (close(return_socket) < 0)
 			printf("closeerror:%s\n", strerror(errno));
 		if (check_u8 != CHECK_OKAY)
 		{
-			printf("master: send_info: %s check_failed ->retry\n", sendFile_ptr->filename);
+			printf("master: send_file: %s check_failed ->retry\n", sendFile_ptr->filename);
 			sleep(1);
 		}
 	} while (check_u8 != CHECK_OKAY);
@@ -396,7 +404,7 @@ void* getFilesAndSend(void* args)
 	{
 		child = child->next;
 	}
-	printf("master:getFileandSend: files found=%s\n", child->name);
+	//printf("master:getFileandSend: files found=%s\n", child->name);
 	if (!xmlStrcmp(child->name, (xmlChar *) "files"))
 	{
 		child = child->children;
@@ -439,16 +447,14 @@ void* getFilesAndSend(void* args)
 						{
 							endOfString_i++;
 						}
-						printf(
-								"master:get files and send: filename =%p\t localname=%p\t *localname=%s\n \t\t subdocname=",
-								filename, localname, localname, subDocName);
+						//printf("master:get files and send: filename =%p\t localname=%p\t *localname=%s\n \t\t subdocname=",filename, localname, localname, subDocName);
 						strcpy(&localname[endOfString_i], ".tar");
 						sprintf(&command[0], "tar -cf %s %s", filename, subDocName); //OUTPUT_XML_NAME
 						system(command);
 					}
 
 					sprintf(&command[0], "tar -rf %s %s", filename, (char*) xmlNodeGetContent(child));
-					printf("master:get files and send: system = %d\t commaned= %s \n", system(command),command);
+					//printf("master:get files and send: system = %d\t command= %s \n", system(command),command);
 
 				}
 			}
@@ -482,7 +488,7 @@ void* getFilesAndSend(void* args)
 
 	sendInfo_sct.file_size = fsize(filename);
 	sendInfo_sct.IP = htonl((uint32_t) strtol((char*) &(node->name[3]), NULL, 10));
-	printf("nodename = %s \t recoveredIP = %u\n", (char*) node->name, ntohl(sendInfo_sct.IP));
+	//printf("nodename = %s \t recoveredIP = %u\n", (char*) node->name, ntohl(sendInfo_sct.IP));
 
 	sendFile_sct.IP = sendInfo_sct.IP;
 	sendFile_sct.filename = filename;
@@ -680,7 +686,8 @@ void * distributeData(void * args)
 	node = node->children;
 	thread_i = 0;
 	while (node) //node!=NULL
-	{ printf("master:distributeData: node = %s\t node->next=%p",node->name,node->next);
+	{
+		printf("master:distributeData: node = %s\t node->next=%p", node->name, node->next);
 
 		if (node->type == XML_ELEMENT_NODE)
 		{
@@ -703,7 +710,7 @@ void * distributeData(void * args)
 			}
 			getFilesAndSend(node);
 			//pthread_create((&send_threads[thread_i]), NULL, getFilesAndSend, (void*) node);
-			printf("master:distribute data:getFilesAndSend thread created : %d\n",thread_i);
+			printf("master:distribute data:getFilesAndSend thread created : %d\n", thread_i);
 			thread_i++;
 
 		}
@@ -713,7 +720,7 @@ void * distributeData(void * args)
 	}
 	for (int i = 0; i < thread_i; i++)
 	{
-		char * ret;
+		char * ret = NULL;
 		//pthread_join(send_threads[i], (void **) &ret);
 		printf("master:distribute data:getFilesAndSend thread joined\n");
 		if (ret)

@@ -99,7 +99,7 @@ int main(int argc, const char* argv[])
 		printf("received\n");
 
 		//connect_addr.sin_addr.s_addr = master_addr.sin_addr.s_addr;
-		printf("bind master IP = %d\n",hostToDottedIP( ntohl(connect_addr.sin_addr.s_addr)));
+		printf("bind master IP = %s\n",hostToDottedIP( ntohl(connect_addr.sin_addr.s_addr)));
 		int return_bind = bind(transfer_sock, (struct sockaddr*) &connect_addr, connect_len);
 		if(return_bind <0)
 		{

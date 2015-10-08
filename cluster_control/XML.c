@@ -141,9 +141,9 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	// generate entry for every available node
 	for (int i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
-		printf("%d\n", i);
+		//printf("%d\n", i);
 		sprintf(IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);
-		printf("listip=%u\townIP=%u\n", clusterInfo_ptr->node_data_list_ptr[i].ip_u32, ownIP);
+		//printf("listip=%u\townIP=%u\n", clusterInfo_ptr->node_data_list_ptr[i].ip_u32, ownIP);
 		curNew = xmlNewChild(rootNew, NULL, (xmlChar *) IP_str, NULL);
 		if (clusterInfo_ptr->node_data_list_ptr[i].ip_u32 == ownIP)
 		{
@@ -152,7 +152,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 			while ( masterOld != NULL && xmlStrcmp(masterOld->name, (const xmlChar *) "master"))
 			{
 				masterOld = masterOld->next;
-				printf("XML:searching master in oldDoc:%s\n", masterOld->name);
+				//printf("XML:searching master in oldDoc:%s\n", masterOld->name);
 			}
 			curNew->children = masterOld->children;
 		}
@@ -285,11 +285,10 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 				while (destSearch != NULL)
 				{
 					id_str = xmlGetProp(destSearch, (xmlChar *) "id");
-					printf("current: node= %s \t search= %s\tcurrent_id = %s \t searched =%s \n",
-							curNew->name, destSearch->name, id_str, destination_str);
+					//printf("current: node= %s \t search= %s\tcurrent_id = %s \t searched =%s \n",	curNew->name, destSearch->name, id_str, destination_str);
 					if (!xmlStrcmp(id_str, destination_str))
 					{
-						printf("%s\n", &(destSearch->name[3]));
+						//printf("%s\n", &(destSearch->name[3]));
 						//exit(0);
 						xmlNewChild(curNew, NULL, (xmlChar*) "dest_IP", &(destSearch->name[3]));
 					}
@@ -311,7 +310,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	XMLremoveUnusedNodes(newXMLdoc);
 	xmlSaveFile(OUTPUT_XML_NAME, newXMLdoc);
 	xmlFree(docNew);
-	printf("XML DONE\n");
+	//printf("XML DONE\n");
 	return newXMLdoc;
 }
 
@@ -338,7 +337,7 @@ int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName)
 	while (child != NULL && xmlStrcmp(child->name, ElementName))
 	{
 		child = child->next;
-		printf("searching %s:%s\n", ElementName, child->name);
+		//printf("searching %s:%s\n", ElementName, child->name);
 	}
 	if (child)
 	{

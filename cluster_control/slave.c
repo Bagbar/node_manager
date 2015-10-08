@@ -25,12 +25,10 @@ void *slave_main(void *args_ptr)
 	char recvBuff[5];
 	memset(recvBuff, '0', sizeof recvBuff);
 
-	struct recv_info recv_info_sct;
-	recv_info_sct.archive_size = 0;
-	//trans_info_sct.status_okay = 0;
+
 
 	pthread_t waitForData_thread;
-	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) &recv_info_sct))
+	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, NULL))
 	{
 		critErr("slave:pthread_create(recv_info)=");
 	}
@@ -236,52 +234,47 @@ int elect_master(int electRecv_sock)
 void *receive_info(void * args)
 {
 	printf("slave:receive info: started\n");
-	struct fileInfo_bufferformat *recvBuff = args;
+	struct recv_info *recvInfo_ptr = args;
+	struct fileInfo_bufferformat *recvBuff = recvInfo_ptr->recvBuff;
 	uint8_t check_u8;
-	pthread_t recv_archive_thread, work_thread;
+	struct sockaddr_in client_addr;
+			socklen_t client_len=sizeof client_addr;
 
-	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int return_socket = recvInfo_ptr->socket;
 
-	if (return_socket < 0)
-		printf("slave: recv_info: socketerror:%s\n", strerror(errno));
-
-	struct sockaddr_in addr, client;
-	socklen_t len;
-	fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
-
-	int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
-	if (return_bind < 0)
-		printf("slave: recv_info: binderror:%s\n", strerror(errno));
 
 	listen(return_socket, 1);
 
 	while (1)
 	{ printf("slave:receiveInfo: accept waiting\n");
-		int return_accept = accept(return_socket, (struct sockaddr*) &client, &len);
+		int return_accept = accept(return_socket, (struct sockaddr*) &client_addr, &client_len);
 		if (return_accept < 0)
 		{
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
 			check_u8 = CHECK_FAILED;
 		}
-		recv(return_accept, &recvBuff, sizeof recvBuff, 0);
-
-		if (recvBuff == 0)
+		printf("slave:recvInfo: accepted sizeof recvBuff = %d\n",sizeof(*recvBuff));
+		recv(return_accept, recvBuff, sizeof (*recvBuff), 0);
+		printf("slave:recvInfo: received");
+		if (recvBuff->cancel == 1) // TODO insert cancel function
 		{
-			pthread_cancel(work_thread);
+			//pthread_cancel(work_thread);
 			check_u8 = WORK_THREAD_CANCELED;
 		}
 		else
 		{
 			check_u8 = CHECK_OKAY;
 		}
-
+		printf("slave:recvInfo: send check");
 		send(return_accept, &check_u8, 1, 0);
 		if (check_u8 == CHECK_OKAY)
 		{
 		}
-		printf("slave:receive info: finished\n");
+		printf("slave:receive info: finished\t cancel =%d \tsize = %d\tworkname= %s\t scriptname= %s \n",recvBuff->cancel,recvBuff->file_size,recvBuff->workname,recvBuff->scriptname);
+		close(return_accept);
 		return NULL;
 	}
+	close(return_socket);
 }
 
 //fetches the files
@@ -364,7 +357,9 @@ void *receive_file(void * args)
 
 void *fetchDataAndExecute(void *args)
 {
+	struct recv_info recvInfo_sct;
 	struct fileInfo_bufferformat recvInfoBuff;
+	recvInfo_sct.recvBuff= &recvInfoBuff;
 	char xmlName[20];
 	struct recv_file recvFile_sct =
 	{ 0, 0 };
@@ -372,9 +367,24 @@ void *fetchDataAndExecute(void *args)
 	struct IP_list *IP_list_ptr;
 	char * workcall;
 
+	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+		if (return_socket < 0)
+			printf("slave: recv_info: socketerror:%s\n", strerror(errno));
+
+		struct sockaddr_in addr, client;
+		socklen_t len;
+		fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
+
+		int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
+		if (return_bind < 0)
+			printf("slave: recv_info: binderror:%s\n", strerror(errno));
+
+		recvInfo_sct.socket= return_socket;
+
 	while (1)
 	{
-		receive_info(&recvInfoBuff);
+		receive_info(&recvInfo_sct);
 		recvFile_sct.expected_size = recvInfoBuff.file_size;
 		receive_file(&recvFile_sct);
 		printf("slave:fetchDataAndExecute: file fetched\n");
@@ -387,7 +397,7 @@ void *fetchDataAndExecute(void *args)
 		xmlDocPtr doc = xmlParseFile(xmlName);
 		IP_list_ptr = getIPfromXML(doc);
 		xmlFree(doc);
-		sprintf(command, "./%s", recvInfoBuff.scriptname);
+		sprintf(command, "sh %s", recvInfoBuff.scriptname);
 		puts(command);
 		system(command);
 		workcall = malloc(IP_list_ptr->amount * 11 + 3 + sizeof(recvInfoBuff.workname));
@@ -445,7 +455,7 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 
 			IP_str = (char*) xmlNodeGetContent(child);
 			IPlist_ptr->IP[i] = (uint32_t) strtol((char*) IP_str, NULL, 10);
-			//printf("IP_i = %d\n", IP_i);
+			printf("IP_i = %d\tIP_str=%s\n",IPlist_ptr-> IP[i],IP_str);
 			xmlFree(IP_str);
 			i++;
 		}

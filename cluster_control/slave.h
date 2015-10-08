@@ -33,8 +33,8 @@ struct IP_list
 /// argument for receive_info function containing the file size
 struct recv_info
 {
-	size_t archive_size;
-//uint8_t status_okay;
+ int socket;
+ struct fileInfo_bufferformat *recvBuff;
 };
 
 /// argument for receive_file function

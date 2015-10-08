@@ -89,8 +89,9 @@ struct slave_args
  */
 struct fileInfo_bufferformat
 {
-	size_t file_size;
+	uint64_t file_size;
 	char workname[FILENAME_SIZE], scriptname[FILENAME_SIZE];
+	uint8_t cancel;
 };
 
 /// struct for list of nodes
