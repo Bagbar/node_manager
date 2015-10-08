@@ -14,6 +14,7 @@ void critErr(char *s)
 
 void fillSockaddrBroad(struct sockaddr_in *broad_addr, uint16_t port)
 {
+
 	broad_addr->sin_family = AF_INET;
 	broad_addr->sin_port = htons(port);
 	broad_addr->sin_addr.s_addr = htonl(INADDR_BROADCAST);

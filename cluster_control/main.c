@@ -28,8 +28,6 @@ int main()
 	ownIP = ntohl(getIP());
 
 	printf("ownIP = %u\n",ownIP);
-	printf("ownIP = %s\n",hostToDottedIP(ownIP));
-	printf("ownIP = %s\n",hostToDottedIP(ntohl(ownIP)));
 
 
 
@@ -171,7 +169,8 @@ int main()
 		}
 		else
 		{
-			printf("main:increase timeCount_mtx_sct to:%d\n", ++timeCount_mtx_sct.var);
+			timeCount_mtx_sct.var++;
+		printf("main:increase timeCount_mtx_sct to:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: under_mutex_unlock:");
 			//printf(">\n");

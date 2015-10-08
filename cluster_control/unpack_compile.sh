@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm *.h
+
 rm *.c
 rm compile.sh
 

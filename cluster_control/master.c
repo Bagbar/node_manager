@@ -13,13 +13,12 @@ char errormessage[100];
 
 #define BUFFERSIZE 1024
 
-void mypause ( void )
+void mypause(void)
 {
-  printf ( "Press [Enter] to continue . . ." );
-  fflush ( stdout );
-  getchar();
+	printf("Press [Enter] to continue . . .");
+	fflush( stdout);
+	getchar();
 }
-
 
 int master_main(int mastBroad_sock)
 {
@@ -72,26 +71,24 @@ int master_main(int mastBroad_sock)
 	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
 
-
-
 	int dummy_sock;
-	 if ((dummy_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	 		{
-	 			critErr("master:dummy_socket=");
-	 		}
-	 fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
+	if ((dummy_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		critErr("master:dummy_socket=");
+	}
+	fillSockaddrAny(&recv_addr, UDP_N2M_PORT);
 	if ((bind(dummy_sock, (struct sockaddr*) &recv_addr, sizeof recv_addr)) < 0)
-	 		{
-	 			critErr("master:bind dummy_sock:");
-	 		}
+	{
+		critErr("master:bind dummy_sock:");
+	}
 	fcntl(dummy_sock, F_SETFL, O_NONBLOCK);
 
 	sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 			(struct sockaddr*) &broad_addr, broad_len);
 
 	/*sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0, (struct sockaddr*) &loop_addr,
-		loop_len);
-*/
+	 loop_len);
+	 */
 
 	readIdentifyAnswers(dummy_sock, &clusterInfo_sct, 1);
 
@@ -151,7 +148,8 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 	clusterInfo_ptr->node_data_list_ptr->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 	clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
 	printf("ip=%u \t type = %u added \t IP_dotted=%s\n",
-			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32, typeAndGroup[0],hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32 ));
+			clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32, typeAndGroup[0],
+			hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[clusterInfo_ptr->numNodes_size].ip_u32));
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->numNodes_size++;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
@@ -198,8 +196,8 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 		else
 		{
 			IP_holder = ntohl(response_addr.sin_addr.s_addr);
-			if(IP_holder == 0 || IP_holder == 0x7F000001) //loopback
-				IP_holder =ownIP;
+			if (IP_holder == 0 || IP_holder == 0x7F000001) //loopback
+				IP_holder = ownIP;
 			if (newList_u8)
 			{
 				addNode2List(clusterInfo_ptr, IP_holder, &typeAndGroup[0]);
@@ -207,7 +205,7 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 			}
 			else
 			{
-				compare_node.ip_u32=IP_holder;
+				compare_node.ip_u32 = IP_holder;
 				searchReturn_ptr = (struct node_data*) bsearch(&compare_node,
 						clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 						sizeof(struct node_data), compareNodes);
@@ -229,10 +227,10 @@ void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr,
 	}
 
 	if (newList_u8)
-		{//printf("master:qsort for new list started\n");
+	{ //printf("master:qsort for new list started\n");
 		qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 				sizeof(struct node_data), compareNodes);
-		}
+	}
 //printf("master:readIdentify finished\n");
 }
 
@@ -261,8 +259,8 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 			outdated_i++;
 		}
 	}
-	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size, sizeof(struct node_data),
-			compareNodes);
+	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
+			sizeof(struct node_data), compareNodes);
 	pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	clusterInfo_ptr->numNodes_size = clusterInfo_ptr->numNodes_size - outdated_i;
 	pthread_mutex_unlock(&clusterInfo_ptr->mtx);
@@ -271,7 +269,7 @@ void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 
 void *sendInfo(void *args)
 {
-	printf("master:sending_info\n");
+	printf("master:send_info started\n");
 	struct send_info *send_info_ptr = args;
 	uint8_t check_u8;
 	struct fileInfo_bufferformat sendBuff;
@@ -280,6 +278,8 @@ void *sendInfo(void *args)
 	memset(sendBuff.workname, 0, FILENAME_SIZE);
 	strcpy(sendBuff.scriptname, send_info_ptr->scriptname);
 	strcpy(sendBuff.workname, send_info_ptr->workname);
+	sendBuff.file_size=send_info_ptr->file_size;
+	printf("master:sendinfo: filesize = %d",sendBuff.file_size);
 
 	struct sockaddr_in dest_addr;
 	dest_addr.sin_family = AF_INET;
@@ -289,9 +289,11 @@ void *sendInfo(void *args)
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (return_socket < 0)
 		printf("slave: recv_info: socketerror:%s\n", strerror(errno));
+	printf("master:send_info: connect \n");
 	int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr));
 	if (return_connect < 0)
-		critErr("master: send_info: connecterror\n");
+		critErr("master: send_info: connecterror");
+	printf("master:send_info: send \n");
 	do
 	{
 		int return_send = send(return_socket, &sendBuff, sizeof(sendBuff), 0);
@@ -357,9 +359,13 @@ void *sendFile(void *args)
 				printf("send data = %d\n", return_send);
 		} while (feof(pFile) == 0);
 		// terminate
+
 		fclose(pFile);
 		printf("master:send_file:file_sent:%s\n", sendFile_ptr->filename);
-
+		if (close(return_socket) < 0)
+					printf("closeerror:%s\n", strerror(errno));
+		if (return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr)))
+			critErr("master:send_info: recv check :connect error:");
 		recv(return_socket, &check_u8, 1, 0);
 
 		if (close(return_socket) < 0)
@@ -390,11 +396,15 @@ void* getFilesAndSend(void* args)
 	{
 		child = child->next;
 	}
+	printf("master:getFileandSend: files found=%s\n", child->name);
 	if (!xmlStrcmp(child->name, (xmlChar *) "files"))
 	{
 		child = child->children;
+
 		while (child)
 		{
+			printf("master:get files and send: child = %s \t type=%d \t content=%s\n", child->name,
+					child->type, xmlNodeGetContent(child));
 			/*	not supported at the moment as the xml tree is added to the archive
 			 *if (!xmlStrcmp(child->name, (xmlChar *) "archive"))
 			 {
@@ -402,41 +412,47 @@ void* getFilesAndSend(void* args)
 			 }
 
 			 else*/
+			if (child->type == XML_ELEMENT_NODE)
 			{
-				if (!xmlStrcmp(child->name, (xmlChar *) "script"))
 				{
-					sendInfo_sct.scriptname = (char*) child->content;
-				}
-				if (!xmlStrcmp(child->name, (xmlChar *) "work"))
-				{
-					sendInfo_sct.workname = (char*) child->content;
-				}
-				if (filename == NULL)
-				{
-					memset(&localname[0], 0, sizeof localname);
-					strcpy(&localname[0], (char*) node->name);
-					xmlDocPtr subDoc = xmlNewDoc((xmlChar *) "1.0");
-					xmlDocSetRootElement(subDoc, node);
-					char subDocName[20];
-					sprintf(subDocName, "%s.xml", (char*) node->name);
-					xmlSaveFile(subDocName, subDoc);
-					xmlDocSetRootElement(subDoc, NULL);
-					xmlFree(subDoc);
-					filename = &localname[0];
-					while (localname[endOfString_i])
+					if (!xmlStrcmp(child->name, (xmlChar *) "script"))
 					{
-						endOfString_i++;
+						sendInfo_sct.scriptname = (char*) xmlNodeGetContent(child);
 					}
-					strcpy(&localname[endOfString_i], ".tar");
-					sprintf(&command[0], "tar -cf %s %s", filename, subDocName); //OUTPUT_XML_NAME
-					system(command);
+					if (!xmlStrcmp(child->name, (xmlChar *) "work"))
+					{
+						sendInfo_sct.workname = (char*) xmlNodeGetContent(child);
+					}
+					if (filename == NULL)
+					{
+						memset(&localname[0], 0, sizeof localname);
+						strcpy(&localname[0], (char*) node->name);
+						xmlDocPtr subDoc = xmlNewDoc((xmlChar *) "1.0");
+						xmlDocSetRootElement(subDoc, node);
+						char subDocName[20];
+						sprintf(subDocName, "%s.xml", (char*) node->name);
+						xmlSaveFile(subDocName, subDoc);
+						xmlDocSetRootElement(subDoc, NULL);
+						xmlFree(subDoc);
+						filename = &localname[0];
+						while (localname[endOfString_i])
+						{
+							endOfString_i++;
+						}
+						printf(
+								"master:get files and send: filename =%p\t localname=%p\t *localname=%s\n \t\t subdocname=",
+								filename, localname, localname, subDocName);
+						strcpy(&localname[endOfString_i], ".tar");
+						sprintf(&command[0], "tar -cf %s %s", filename, subDocName); //OUTPUT_XML_NAME
+						system(command);
+					}
+
+					sprintf(&command[0], "tar -rf %s %s", filename, (char*) xmlNodeGetContent(child));
+					printf("master:get files and send: system = %d\t commaned= %s \n", system(command),command);
+
 				}
-
-				sprintf(&command[0], "tar -rf %s %s", filename, (char*) child->content);
-				system(command);
-
 			}
-
+			child = child->next;
 		}
 
 	}
@@ -446,13 +462,13 @@ void* getFilesAndSend(void* args)
 		puts(errormessage);
 		return errormessage; //FIXME maybe not ideal to give that address back but works for now
 	}
-	printf("master:getFileandSend: endOfString = %d\n",endOfString_i);
+	printf("master:getFileandSend: endOfString = %d\n", endOfString_i);
 	if (endOfString_i > 0) //i is the position of ".tar" in the filename for the archive if 0 no archive was generated
 	{
 		if (localname == filename)
 		{
 			memset(&command[0], 0, sizeof command);
-			sprintf(&command[0], "gzip  %s", localname);
+			sprintf(&command[0], "gzip -f %s", localname);
 			system(command);
 			strcpy(&localname[endOfString_i + 4], ".gz");
 		}
@@ -465,8 +481,8 @@ void* getFilesAndSend(void* args)
 	}
 
 	sendInfo_sct.file_size = fsize(filename);
-	sendInfo_sct.IP = (uint32_t) strtol((char*) &(node->name[3]), NULL, 10);
-	printf("nodename = %s \t recoveredIP = %d\n", (char*) node->name, sendInfo_sct.IP);
+	sendInfo_sct.IP = htonl((uint32_t) strtol((char*) &(node->name[3]), NULL, 10));
+	printf("nodename = %s \t recoveredIP = %u\n", (char*) node->name, ntohl(sendInfo_sct.IP));
 
 	sendFile_sct.IP = sendInfo_sct.IP;
 	sendFile_sct.filename = filename;
@@ -619,7 +635,7 @@ void * getProgram(void * args)
 	Distribution_ptr = createDistributionXML(getProgram_ptr->clusterInfo_ptr);
 
 	char * ret;
-	printf("master:get Program: dist ptr = %p",Distribution_ptr);
+	printf("master:get Program: dist ptr = %p\n", Distribution_ptr);
 	if (Distribution_ptr)
 		ret = distributeData(Distribution_ptr);
 
@@ -640,7 +656,7 @@ void * getProgram(void * args)
 
 void * distributeData(void * args)
 {
-	printf("master:distributeDAta started");
+	printf("master:distributeDAta started\n");
 	xmlDocPtr doc = args;
 	char * errormarker = NULL;
 
@@ -664,7 +680,7 @@ void * distributeData(void * args)
 	node = node->children;
 	thread_i = 0;
 	while (node) //node!=NULL
-	{
+	{ printf("master:distributeData: node = %s\t node->next=%p",node->name,node->next);
 
 		if (node->type == XML_ELEMENT_NODE)
 		{
@@ -687,7 +703,7 @@ void * distributeData(void * args)
 			}
 			getFilesAndSend(node);
 			//pthread_create((&send_threads[thread_i]), NULL, getFilesAndSend, (void*) node);
-			printf("master:distribute data:getFilesAndSend thread created");
+			printf("master:distribute data:getFilesAndSend thread created : %d\n",thread_i);
 			thread_i++;
 
 		}
@@ -695,11 +711,11 @@ void * distributeData(void * args)
 		node = node->next;
 
 	}
-	for (int i = 0; i < allocatedThreads_i; i++)
+	for (int i = 0; i < thread_i; i++)
 	{
 		char * ret;
 		//pthread_join(send_threads[i], (void **) &ret);
-		printf("master:distribute data:getFilesAndSend thread joined");
+		printf("master:distribute data:getFilesAndSend thread joined\n");
 		if (ret)
 			errormarker = ret;
 	}

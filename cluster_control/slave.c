@@ -7,7 +7,7 @@
 
 #include "slave.h"
 
-#define BUFFERSIZE 10
+#define BUFFERSIZE 1024
 #define IDENTIFIER_LENGTH 8 // 1 for type + 6 for MAC + 1 for subgroup
 
 extern uint8_t mac[6];
@@ -21,9 +21,9 @@ void *slave_main(void *args_ptr)
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
 	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
-	int recvReturn_i, sendreturn;
-	char recvBuff[BUFFERSIZE];
-	memset(recvBuff, '0', BUFFERSIZE);
+	int recvReturn_i, sendreturn_i,lastTimeout_i;
+	char recvBuff[5];
+	memset(recvBuff, '0', sizeof recvBuff);
 
 	struct recv_info recv_info_sct;
 	recv_info_sct.archive_size = 0;
@@ -39,7 +39,7 @@ void *slave_main(void *args_ptr)
 
 	struct sockaddr_in serv_addr, elect_recv_addr, cli_addr;
 	socklen_t cli_len = sizeof cli_addr;
-	cli_addr.sin_family =AF_INET;
+	//cli_addr.sin_family =AF_INET;
 	//create UDP-Socket receiver for control commands
 	if ((recvMast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
@@ -90,13 +90,13 @@ void *slave_main(void *args_ptr)
 		case 'i': ///identify self : send your Type to caller
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
-			//printf("cli_addr.sinfamily = %d\n",cli_addr.sin_family);
+
 			cli_addr.sin_port= htons(UDP_N2M_PORT);
 			//printf("slave:\t\tcli_addr.sinfamily = %d\n",cli_addr.sin_family);
-			sendreturn = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
+			sendreturn_i = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
 					(struct sockaddr*) &cli_addr, cli_len);
 			//printf("slave_main:send identify:%d\n", sendreturn);
-			if (sendreturn < 0)
+			if (sendreturn_i < 0)
 				perror("slave_main:send identify failed");
 			//no break
 		case 'k': ///keepalive
@@ -113,8 +113,10 @@ void *slave_main(void *args_ptr)
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
 			////printf("slave_main: MUTEX LOCKED\n");
+			if(timeoutCounter_ptr->var >1){
 			timeoutCounter_ptr->var = 0;
 			*master_ptr = elect_master(electRecv_sock);
+			}
 			//printf("slave_main:master= %d\n", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_unlock:");
@@ -178,7 +180,7 @@ int elect_master(int electRecv_sock)
 		// Receive msg from other boards
 		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_other), 0, NULL, NULL);
 
-		printf("returnrecv=%d\t", recvReturn_i);
+		printf("returnrecv=%d\n", recvReturn_i);
 		if (recvReturn_i != sizeof(typeMAC_self))
 		{
 			if (recvReturn_i == -1)
@@ -213,6 +215,7 @@ int elect_master(int electRecv_sock)
 				else
 					printf("I'm the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n", i,
 							typeMAC_other[i], typeMAC_self[i]);
+
 				if(typeMAC_other[i] > typeMAC_self[i])
 					i=IDENTIFIER_LENGTH;
 				i++;
@@ -232,6 +235,7 @@ int elect_master(int electRecv_sock)
 //fetches target IPaddress for processed data, size of work program
 void *receive_info(void * args)
 {
+	printf("slave:receive info: started\n");
 	struct fileInfo_bufferformat *recvBuff = args;
 	uint8_t check_u8;
 	pthread_t recv_archive_thread, work_thread;
@@ -252,7 +256,7 @@ void *receive_info(void * args)
 	listen(return_socket, 1);
 
 	while (1)
-	{ printf("slave:receiveInfo: accept waiting");
+	{ printf("slave:receiveInfo: accept waiting\n");
 		int return_accept = accept(return_socket, (struct sockaddr*) &client, &len);
 		if (return_accept < 0)
 		{
@@ -275,7 +279,7 @@ void *receive_info(void * args)
 		if (check_u8 == CHECK_OKAY)
 		{
 		}
-		printf("slave:receive file: finished");
+		printf("slave:receive info: finished\n");
 		return NULL;
 	}
 }
@@ -308,6 +312,7 @@ void *receive_file(void * args)
 	listen(recv_sock, 1);
 	do
 	{
+		printf("slave:receive file: accept\n");
 		int return_accept = accept(recv_sock, (struct sockaddr*) &client, &len);
 		if (return_accept < 0)
 			printf("accepterror:%s\n", strerror(errno));
@@ -325,14 +330,15 @@ void *receive_file(void * args)
 			if (recv_return_i < 0)
 				printf("recverror:%s\n", strerror(errno));
 			else
-				printf("recv data = %d", recv_return_i);
+				printf("recv data = %d\n", recv_return_i);
 
 			fwrite(recvBuff, 1, recv_return_i, pFile);
 			file_size += recv_return_i;
-		} while (recv_return_i == BUFFERSIZE); //TODO maybe change
+		} while (recv_return_i>0);// == BUFFERSIZE); //TODO maybe change
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;
+		printf("expected size= %d\t received size =%d\n",file_info_ptr->expected_size,file_size);
 		if (file_info_ptr->expected_size != file_size)
 		{
 			errorcount_i++;
@@ -342,8 +348,9 @@ void *receive_file(void * args)
 		{
 			check_u8 = CHECK_OKAY;
 		}
-
+		return_accept = accept(recv_sock, (struct sockaddr*) &client, &len);
 		send(return_accept, &check_u8, 1, 0);
+		printf("slave_receive file : check sent and closing socket\n");
 		close(return_accept);
 	} while (check_u8 == CHECK_FAILED && errorcount_i < 3);
 	if (errorcount_i >= 3)
@@ -351,7 +358,7 @@ void *receive_file(void * args)
 		printf("slave:receive_file: couldn't receive archive");
 		exit(6);
 	}
-	printf("slave:receive file: finished");
+	printf("slave:receive file: finished\n");
 	return NULL;
 }
 
@@ -370,6 +377,7 @@ void *fetchDataAndExecute(void *args)
 		receive_info(&recvInfoBuff);
 		recvFile_sct.expected_size = recvInfoBuff.file_size;
 		receive_file(&recvFile_sct);
+		printf("slave:fetchDataAndExecute: file fetched\n");
 
 		sprintf(command, "tar xzf %s", NODE_ARCHIVE_NAME);
 		system(command);
@@ -396,7 +404,9 @@ void *fetchDataAndExecute(void *args)
 			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
 			strcat(workcall, singleIP_c);
 		}
-		system(workcall);
+		printf("\nstarting work :  %s\n",workcall);
+
+		printf("\nfinished work : %d\n",system(workcall));
 		free(IP_list_ptr);
 		free(workcall);
 	}

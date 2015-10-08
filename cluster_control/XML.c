@@ -149,7 +149,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 		{
 			xmlNewProp(curNew, (xmlChar*) "id", (xmlChar*) "master");
 			masterOld = rootOld->children;
-			while (xmlStrcmp(masterOld->name, (const xmlChar *) "master") && masterOld != NULL)
+			while ( masterOld != NULL && xmlStrcmp(masterOld->name, (const xmlChar *) "master"))
 			{
 				masterOld = masterOld->next;
 				printf("XML:searching master in oldDoc:%s\n", masterOld->name);
@@ -181,7 +181,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 				do
 				{
 					curNew = curNew->next;
-				} while (curNew->type != XML_ELEMENT_NODE && curNew != NULL);
+				} while ( curNew != NULL && curNew->type != XML_ELEMENT_NODE );
 			}
 			xmlFree(id_str);
 			if (curNew != NULL)
@@ -196,7 +196,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 					do
 					{
 						curNew = curNew->next;
-					} while (curNew->type != XML_ELEMENT_NODE && curNew != NULL);
+					} while (curNew != NULL && curNew->type != XML_ELEMENT_NODE );
 
 				}
 				else
@@ -335,7 +335,7 @@ int XMLsearchElementAndGetInt(xmlNodePtr cur, xmlChar *ElementName)
 	int convert_i = -1;
 	xmlChar* value_str = NULL;
 	xmlNodePtr child = cur->children;
-	while (xmlStrcmp(child->name, ElementName) && child != NULL)
+	while (child != NULL && xmlStrcmp(child->name, ElementName))
 	{
 		child = child->next;
 		printf("searching %s:%s\n", ElementName, child->name);
