@@ -58,6 +58,7 @@
 #define UDP_ELECT_M_PORT 50003
 #define UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER 51000
 #define TCP_GET_PROGRAM 51001
+#define TCP_SEND_SOLUTION 51002
 #define TCP_RECV_ARCHIVE_PORT 50010 //port for the archive with all needed data for the node
 #define TCP_RECV_INFO_PORT 50011 //used for sending  administrative data to slaves
 #define TCP_RECV_DATA_PORT 40001 //receive the data that has to be processed
@@ -70,19 +71,27 @@
 #define FILENAME_SIZE 30
 
 ///struct for storing a variable with a corresponding mutex
+struct cond_mtx
+{
+	pthread_cond_t cond;
+	pthread_mutex_t mtx;
+};
 struct var_mtx
 {
 	volatile int var;
 	pthread_mutex_t mtx;
 };
 
-///struct for thread creating arguments master_ptr is also used with the mutex
+///struct with arguments for thread creation of slave_main; master_ptr is also used with the mutex of timeout_count
 struct slave_args
 {
-	struct var_mtx *timeout_count;
+	struct cond_mtx *workReady_ptr;
+	struct var_mtx *timeoutCount_ptr;
 	int *master_ptr;
 	uint8_t *subgroup_ptr;
 };
+
+
 
 /** \brief  struct in for sending the file_info over ethernet, shall be copied into the buffer
  *

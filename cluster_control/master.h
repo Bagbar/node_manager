@@ -46,12 +46,13 @@ struct get_Program
 	/// let's getProgram return when it is waiting, when a file was received it does not do anything
 	char exitSignal;
 	struct cluster_info *clusterInfo_ptr;
+	struct cond_mtx *workReady_ptr;
 };
 
 /** \brief gets called when Node is elected as master, manages network exploration, job receiving and process distrubution
  *
  */
-int master_main(int mastBroad_sock);
+int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr);
 
 /** \brief adds nodes to clusterInfo with the info of IP, type and group
  *

@@ -16,19 +16,19 @@ extern uint32_t ownIP;
 void *slave_main(void *args_ptr)
 {
 	//Variable declarations
-	struct var_mtx *timeoutCounter_ptr = ((struct slave_args*) args_ptr)->timeout_count;
+	struct var_mtx *timeoutCounter_ptr = ((struct slave_args*) args_ptr)->timeoutCount_ptr;
 	int *master_ptr = ((struct slave_args*) args_ptr)->master_ptr;
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
 	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
-	int recvReturn_i, sendreturn_i, lastTimeout_i;
+	int recvReturn_i, sendreturn_i;
 	char recvBuff[5];
 	memset(recvBuff, '0', sizeof recvBuff);
 
-	struct var_mtx workReady_sct =
-	{ 0, PTHREAD_MUTEX_INITIALIZER };
+
+
 	pthread_t waitForData_thread;
-	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) &workReady_sct))
+	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) ((struct slave_args*) args_ptr)->workReady_ptr))
 	{
 		critErr("slave:pthread_create(recv_info)=");
 	}
@@ -255,7 +255,7 @@ void *receive_info(void * args)
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
 			check_u8 = CHECK_FAILED;
 		}
-		printf("slave:recvInfo: accepted sizeof recvBuff = %d\n", sizeof(*recvBuff));
+		printf("slave:recvInfo: accepted sizeof recvBuff = %u\n", sizeof(*recvBuff));
 		recv(return_accept, recvBuff, sizeof(*recvBuff), 0);
 		printf("slave:recvInfo: received");
 		if (recvBuff->cancel == 1) // TODO insert cancel function
@@ -273,7 +273,7 @@ void *receive_info(void * args)
 		{
 		}
 		printf(
-				"slave:receive info: finished\t cancel =%d \tsize = %d\tworkname= %s\t scriptname= %s \n",
+				"slave:receive info: finished\t cancel =%d \tsize = %u\tworkname= %s\t scriptname= %s \n",
 				recvBuff->cancel, recvBuff->file_size, recvBuff->workname, recvBuff->scriptname);
 		close(return_accept);
 		return NULL;
@@ -335,7 +335,7 @@ void *receive_file(void * args)
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;
-		printf("expected size= %d\t received size =%d\n", file_info_ptr->expected_size, file_size);
+		printf("expected size= %u\t received size =%u\n", file_info_ptr->expected_size, file_size);
 		if (file_info_ptr->expected_size != file_size)
 		{
 			errorcount_i++;
@@ -361,7 +361,7 @@ void *receive_file(void * args)
 
 void *fetchDataAndExecute(void *args)
 {
-	struct var_mtx *workReady_ptr = args;
+	struct cond_mtx *workReady_ptr = args;
 	struct recv_info recvInfo_sct;
 	struct fileInfo_bufferformat recvInfoBuff;
 	recvInfo_sct.recvBuff = &recvInfoBuff;
@@ -377,22 +377,23 @@ void *fetchDataAndExecute(void *args)
 	if (return_socket < 0)
 		printf("slave: recv_info: socketerror:%s\n", strerror(errno));
 
-	struct sockaddr_in addr, client;
-	socklen_t len;
+	struct sockaddr_in addr;
 	fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
 
 	int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
 	if (return_bind < 0)
-		printf("slave: fetchDataAndExecute: binderror:%s\n", strerror(errno));
+		printf("slave: fetch data and execute:: binderror:%s\n", strerror(errno));
 
 	recvInfo_sct.socket = return_socket;
 
 	while (1)
 	{
+
+
 		receive_info(&recvInfo_sct);
 		recvFile_sct.expected_size = recvInfoBuff.file_size;
 		receive_file(&recvFile_sct);
-		printf("slave:fetchDataAndExecute: file fetched\n");
+		printf("slave:fetch data and execute: file fetched\n");
 
 		sprintf(command, "tar xzf %s", NODE_ARCHIVE_NAME);
 		system(command);
@@ -419,13 +420,18 @@ void *fetchDataAndExecute(void *args)
 			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
 			strcat(workcall, singleIP_c);
 		}
-		printf("\nstarting work :  %s\n", workcall);
 		if (pthread_mutex_lock(&workReady_ptr->mtx))
-			perror("slave:fetchDataAndExecute: work mutex lock");
+							perror("slave:fetch data and execute: work mutex lock\n");
+		printf("slave: fetch Data: condition mutex locked\n");
+		printf("\nstarting work :  %s\n", workcall);
+
 		printf("\nfinished work : %d\n", system(workcall));
-		workReady_ptr->var = 1;
+		if(pthread_cond_signal(&workReady_ptr->cond))
+			perror("slave:fetch data and execute: condition signal");
+		printf("slave: fetch Data: condition signal\n");
 		if (pthread_mutex_unlock(&workReady_ptr->mtx))
-			perror("slave:fetchDataAndExecute: work mutex unlock");
+			perror("slave:fetch data and execute: work mutex unlock");
+		printf("slave: fetch Data: condition mutex unlocked\n");
 		free(IP_list_ptr);
 		free(workcall);
 	}
@@ -442,7 +448,6 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 	IPlist_ptr->amount = 0;
 	xmlNodePtr node = xmlDocGetRootElement(doc);
 	xmlNodePtr child = node->children;
-	uint32_t IP_u32;
 	char *IP_str;
 	int i = 0;
 	while (child)

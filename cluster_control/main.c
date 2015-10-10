@@ -84,10 +84,10 @@ int main()
 	struct sockaddr_in broad_addr, loop_addr, any_addr;
 	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
 
-	struct var_mtx timeCount_mtx_sct =
-	{ 1, PTHREAD_MUTEX_INITIALIZER };
+	struct var_mtx timeCount_mtx_sct =	{ 1, PTHREAD_MUTEX_INITIALIZER };
+	struct cond_mtx workReady_condMtx={PTHREAD_COND_INITIALIZER,PTHREAD_MUTEX_INITIALIZER};
 	struct slave_args slaveMain_args =
-	{ &timeCount_mtx_sct, &master_i, &subgroup_u8 };
+	{&workReady_condMtx, &timeCount_mtx_sct, &master_i, &subgroup_u8 };
 
 	pthread_t slave_thread;
 	if (pthread_create(&slave_thread, NULL, slave_main, (void*) &slaveMain_args))
@@ -123,7 +123,7 @@ int main()
 		if (master_i)
 		{
 			printf("main:I am master and start control function counter mutex is not locked\n");
-			master_main(mastBroad_sock);
+			master_main(mastBroad_sock,&workReady_condMtx);
 			master_i = 0;
 		}
 		if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
