@@ -27,9 +27,7 @@ int main()
 	getMAC(mac);
 	ownIP = ntohl(getIP());
 
-	printf("ownIP = %u\n",ownIP);
-
-
+	printf("ownIP = %u\n", ownIP);
 
 	//xmlDocPtr inputXML = xmlParseFile(filename);
 
@@ -170,7 +168,7 @@ int main()
 		else
 		{
 			timeCount_mtx_sct.var++;
-		printf("main:increase timeCount_mtx_sct to:%d\n", timeCount_mtx_sct.var);
+			printf("main:increase timeCount_mtx_sct to:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: under_mutex_unlock:");
 			//printf(">\n");

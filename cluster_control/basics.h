@@ -23,6 +23,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define RETURN_NAME "return.file"
 #define ARCHIVE_NAME "archive.tar"
 #define OUTPUT_XML_NAME "output.xml"
 #define INPUT_XML_NAME "input.xml"
@@ -55,9 +56,9 @@
 #define UDP_NODE_LISTEN_PORT 50001 //used for general commands to Nodes
 #define UDP_N2M_PORT 50002 //slave to master
 #define UDP_ELECT_M_PORT 50003
-#define UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER 51000
-#define TCP_GET_DATA 51001
-#define TCP_RECV_ARCHIVE_PORT 50010 //port for the archive with all needed data
+#define UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER 51000
+#define TCP_GET_PROGRAM 51001
+#define TCP_RECV_ARCHIVE_PORT 50010 //port for the archive with all needed data for the node
 #define TCP_RECV_INFO_PORT 50011 //used for sending  administrative data to slaves
 #define TCP_RECV_DATA_PORT 40001 //receive the data that has to be processed
 

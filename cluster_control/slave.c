@@ -21,14 +21,14 @@ void *slave_main(void *args_ptr)
 	uint8_t boardtype_u8 = FPGATYPE;
 	uint8_t *subgroup_ptr = ((struct slave_args*) args_ptr)->subgroup_ptr;
 	uint8_t typeAndGroup[2]; //Group ([1]) not implemented at the moment
-	int recvReturn_i, sendreturn_i,lastTimeout_i;
+	int recvReturn_i, sendreturn_i, lastTimeout_i;
 	char recvBuff[5];
 	memset(recvBuff, '0', sizeof recvBuff);
 
-
-
+	struct var_mtx workReady_sct =
+	{ 0, PTHREAD_MUTEX_INITIALIZER };
 	pthread_t waitForData_thread;
-	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, NULL))
+	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) &workReady_sct))
 	{
 		critErr("slave:pthread_create(recv_info)=");
 	}
@@ -89,7 +89,7 @@ void *slave_main(void *args_ptr)
 			typeAndGroup[0] = boardtype_u8;
 			typeAndGroup[1] = *subgroup_ptr;
 
-			cli_addr.sin_port= htons(UDP_N2M_PORT);
+			cli_addr.sin_port = htons(UDP_N2M_PORT);
 			//printf("slave:\t\tcli_addr.sinfamily = %d\n",cli_addr.sin_family);
 			sendreturn_i = sendto(recvMast_sock, &typeAndGroup[0], (size_t) 2, 0,
 					(struct sockaddr*) &cli_addr, cli_len);
@@ -111,9 +111,10 @@ void *slave_main(void *args_ptr)
 			if (pthread_mutex_lock(&(timeoutCounter_ptr->mtx)))
 				critErr("slave_main: mutex_lock:");
 			////printf("slave_main: MUTEX LOCKED\n");
-			if(timeoutCounter_ptr->var >1){
-			timeoutCounter_ptr->var = 0;
-			*master_ptr = elect_master(electRecv_sock);
+			if (timeoutCounter_ptr->var > 1)
+			{
+				timeoutCounter_ptr->var = 0;
+				*master_ptr = elect_master(electRecv_sock);
 			}
 			//printf("slave_main:master= %d\n", *master_ptr);
 			if (pthread_mutex_unlock(&(timeoutCounter_ptr->mtx)))
@@ -176,7 +177,8 @@ int elect_master(int electRecv_sock)
 	while (best_i == 1 && timeout_i > 0)
 	{
 		// Receive msg from other boards
-		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_other), 0, NULL, NULL);
+		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_other), 0, NULL,
+				NULL);
 
 		printf("returnrecv=%d\n", recvReturn_i);
 		if (recvReturn_i != sizeof(typeMAC_self))
@@ -214,8 +216,8 @@ int elect_master(int electRecv_sock)
 					printf("I'm the best;i=%d\t typeMAC_other[i]=%d \ttypeMAC_self[i]=%d\n", i,
 							typeMAC_other[i], typeMAC_self[i]);
 
-				if(typeMAC_other[i] > typeMAC_self[i])
-					i=IDENTIFIER_LENGTH;
+				if (typeMAC_other[i] > typeMAC_self[i])
+					i = IDENTIFIER_LENGTH;
 				i++;
 			}
 		}
@@ -238,23 +240,23 @@ void *receive_info(void * args)
 	struct fileInfo_bufferformat *recvBuff = recvInfo_ptr->recvBuff;
 	uint8_t check_u8;
 	struct sockaddr_in client_addr;
-			socklen_t client_len=sizeof client_addr;
+	socklen_t client_len = sizeof client_addr;
 
 	int return_socket = recvInfo_ptr->socket;
-
 
 	listen(return_socket, 1);
 
 	while (1)
-	{ printf("slave:receiveInfo: accept waiting\n");
+	{
+		printf("slave:receiveInfo: accept waiting\n");
 		int return_accept = accept(return_socket, (struct sockaddr*) &client_addr, &client_len);
 		if (return_accept < 0)
 		{
 			printf("slave: recv_info: accepterror:%s\n", strerror(errno));
 			check_u8 = CHECK_FAILED;
 		}
-		printf("slave:recvInfo: accepted sizeof recvBuff = %d\n",sizeof(*recvBuff));
-		recv(return_accept, recvBuff, sizeof (*recvBuff), 0);
+		printf("slave:recvInfo: accepted sizeof recvBuff = %d\n", sizeof(*recvBuff));
+		recv(return_accept, recvBuff, sizeof(*recvBuff), 0);
 		printf("slave:recvInfo: received");
 		if (recvBuff->cancel == 1) // TODO insert cancel function
 		{
@@ -270,7 +272,9 @@ void *receive_info(void * args)
 		if (check_u8 == CHECK_OKAY)
 		{
 		}
-		printf("slave:receive info: finished\t cancel =%d \tsize = %d\tworkname= %s\t scriptname= %s \n",recvBuff->cancel,recvBuff->file_size,recvBuff->workname,recvBuff->scriptname);
+		printf(
+				"slave:receive info: finished\t cancel =%d \tsize = %d\tworkname= %s\t scriptname= %s \n",
+				recvBuff->cancel, recvBuff->file_size, recvBuff->workname, recvBuff->scriptname);
 		close(return_accept);
 		return NULL;
 	}
@@ -300,7 +304,7 @@ void *receive_file(void * args)
 
 	int return_bind = bind(recv_sock, (struct sockaddr*) &addr, sizeof(addr));
 	if (return_bind < 0)
-		printf("binderror:%s\n", strerror(errno));
+		perror("slave:receive file:binderror:");
 
 	listen(recv_sock, 1);
 	do
@@ -327,11 +331,11 @@ void *receive_file(void * args)
 
 			fwrite(recvBuff, 1, recv_return_i, pFile);
 			file_size += recv_return_i;
-		} while (recv_return_i>0);// == BUFFERSIZE); //TODO maybe change
+		} while (recv_return_i > 0); // == BUFFERSIZE); //TODO maybe change
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;
-		printf("expected size= %d\t received size =%d\n",file_info_ptr->expected_size,file_size);
+		printf("expected size= %d\t received size =%d\n", file_info_ptr->expected_size, file_size);
 		if (file_info_ptr->expected_size != file_size)
 		{
 			errorcount_i++;
@@ -357,9 +361,10 @@ void *receive_file(void * args)
 
 void *fetchDataAndExecute(void *args)
 {
+	struct var_mtx *workReady_ptr = args;
 	struct recv_info recvInfo_sct;
 	struct fileInfo_bufferformat recvInfoBuff;
-	recvInfo_sct.recvBuff= &recvInfoBuff;
+	recvInfo_sct.recvBuff = &recvInfoBuff;
 	char xmlName[20];
 	struct recv_file recvFile_sct =
 	{ 0, 0 };
@@ -369,18 +374,18 @@ void *fetchDataAndExecute(void *args)
 
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-		if (return_socket < 0)
-			printf("slave: recv_info: socketerror:%s\n", strerror(errno));
+	if (return_socket < 0)
+		printf("slave: recv_info: socketerror:%s\n", strerror(errno));
 
-		struct sockaddr_in addr, client;
-		socklen_t len;
-		fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
+	struct sockaddr_in addr, client;
+	socklen_t len;
+	fillSockaddrAny(&addr, TCP_RECV_INFO_PORT);
 
-		int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
-		if (return_bind < 0)
-			printf("slave: recv_info: binderror:%s\n", strerror(errno));
+	int return_bind = bind(return_socket, (struct sockaddr*) &addr, sizeof(addr));
+	if (return_bind < 0)
+		printf("slave: fetchDataAndExecute: binderror:%s\n", strerror(errno));
 
-		recvInfo_sct.socket= return_socket;
+	recvInfo_sct.socket = return_socket;
 
 	while (1)
 	{
@@ -414,9 +419,13 @@ void *fetchDataAndExecute(void *args)
 			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
 			strcat(workcall, singleIP_c);
 		}
-		printf("\nstarting work :  %s\n",workcall);
-
-		printf("\nfinished work : %d\n",system(workcall));
+		printf("\nstarting work :  %s\n", workcall);
+		if (pthread_mutex_lock(&workReady_ptr->mtx))
+			perror("slave:fetchDataAndExecute: work mutex lock");
+		printf("\nfinished work : %d\n", system(workcall));
+		workReady_ptr->var = 1;
+		if (pthread_mutex_unlock(&workReady_ptr->mtx))
+			perror("slave:fetchDataAndExecute: work mutex unlock");
 		free(IP_list_ptr);
 		free(workcall);
 	}
@@ -455,7 +464,7 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 
 			IP_str = (char*) xmlNodeGetContent(child);
 			IPlist_ptr->IP[i] = (uint32_t) strtol((char*) IP_str, NULL, 10);
-			printf("IP_i = %d\tIP_str=%s\n",IPlist_ptr-> IP[i],IP_str);
+			printf("IP_i = %d\tIP_str=%s\n", IPlist_ptr->IP[i], IP_str);
 			xmlFree(IP_str);
 			i++;
 		}

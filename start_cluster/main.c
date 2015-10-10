@@ -20,8 +20,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#define UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER 51000
-#define TCP_RECV_ARCHIVE_PORT 50010
+#define UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER 51000
+#define TCP_GET_PROGRAM 51001
 
 #define BUFFERSIZE 1024
 
@@ -81,11 +81,11 @@ int main(int argc, const char* argv[])
 				fputs("main: couldn't set setsockopt:",stderr);
 
 		broadcast_addr.sin_family = AF_INET;
-		broadcast_addr.sin_port = htons(UDP_OPEN_TCP_CONNECTION_FOR_DATA_TRANSFER);
+		broadcast_addr.sin_port = htons(UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER);
 		broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
 		connect_addr.sin_family = AF_INET;
-		connect_addr.sin_port = htons(TCP_RECV_ARCHIVE_PORT);
+		connect_addr.sin_port = htons(TCP_GET_PROGRAM);
 		connect_addr.sin_addr.s_addr=htonl(INADDR_ANY);
 		printf("sending broadcast\n");
 		returnSend_i = sendto(broadcast_sock, &broadSendBuff[0], sizeof broadSendBuff, 0,
