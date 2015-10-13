@@ -468,8 +468,8 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 		{
 
 			IP_str = (char*) xmlNodeGetContent(child);
-			IPlist_ptr->IP[i] = (uint32_t) strtol((char*) IP_str, NULL, 10);
-			printf("IP_i = %d\tIP_str=%s\n", IPlist_ptr->IP[i], IP_str);
+			IPlist_ptr->IP[i] = (uint32_t) strtoul((char*) IP_str, NULL, 10);
+			printf("IP_i = %u\tIP_str=%s\n", IPlist_ptr->IP[i], IP_str);
 			xmlFree(IP_str);
 			i++;
 		}

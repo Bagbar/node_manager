@@ -339,7 +339,7 @@ void *sendFile(void *args)
 		critErr("master:send_info: socket error:");
 	do
 	{
-
+		printf("AAAASDASDASDASD: dest addr=%u",dest_addr.sin_addr.s_addr);
 		int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr));
 		if (return_connect < 0)
 			critErr("master:send_file:connect error:");
@@ -416,14 +416,9 @@ void* getFilesAndSend(void* args)
 
 		while (child)
 		{
-			//printf("master:get files and send: child = %s \t type=%d \t content=%s\n", child->name,child->type, xmlNodeGetContent(child));
-			/*	not supported at the moment as the xml tree is added to the archive
-			 *if (!xmlStrcmp(child->name, (xmlChar *) "archive"))
-			 {
-			 filename = (char*) child->content;
-			 }
+			printf("master:get files and send: child = %s \t type=%d \t content=%s\n", child->name,child->type, xmlNodeGetContent(child));
 
-			 else*/
+
 			if (child->type == XML_ELEMENT_NODE)
 			{
 				{
@@ -618,7 +613,7 @@ void * getProgram(void * args)
 
 		}
 
-		printf("master:get Program:received:%s\n", listenBuff);
+		//printf("master:get Program:received:%s\n", listenBuff);
 		if (!strcmp(listenBuff, "fetch"))
 		{
 
@@ -643,9 +638,9 @@ void * getProgram(void * args)
 				recvReturn_i = recv(openConnection_sock, &buffer[0], BUFFERSIZE, 0);
 				if (recvReturn_i < 0)
 					printf("master:get Program: recverror:%s\n", strerror(errno));
-				else
-					printf("master:get Program: recv data = %d\n", recvReturn_i);
-
+				else{
+					//printf("master:get Program: recv data = %d\n", recvReturn_i);
+				}
 				fwrite(&buffer[0], 1, recvReturn_i, pFile);
 			} while (recvReturn_i > 0);
 
@@ -708,8 +703,9 @@ void * getProgram(void * args)
 								sendReturn_i = send(returnSolution_sock, &buffer[0], result, 0);
 								if (sendReturn_i < 0)
 									printf("master: get Program: senderror:%s\n", strerror(errno));
-								else
-									printf("send data = %d\n", sendReturn_i);
+								else{
+									//printf("send data = %d\n", sendReturn_i);
+								}
 							} while (feof(pFile) == 0);
 
 				}
