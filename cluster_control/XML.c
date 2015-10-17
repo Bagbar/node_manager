@@ -9,7 +9,7 @@
 
 extern uint32_t ownIP;
 
-static void print_element_names(xmlNode * a_node)
+/*static void print_element_names(xmlNode * a_node)
 {
 	xmlNode *cur_node = NULL;
 
@@ -21,13 +21,12 @@ static void print_element_names(xmlNode * a_node)
 		}
 		print_element_names(cur_node->children);
 	}
-}
+}*/
 
 int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 {
 	int *values_ptr = malloc(sizeof(int) * 2);
 	xmlNodePtr node = NULL;
-	xmlChar *value;
 	node = xmlDocGetRootElement(doc);
 	node = node->children;
 	int min_i, weight_i;
@@ -113,8 +112,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	NULL, destSearch = NULL;
 	xmlChar *destination_str, *id_str;
 	xmlChar partnumber_str[10];
-	char isElement = 0;
-	int i, restNodes_i, usedRestNodes_i, convert_i, min_i, max_i, weight_i, additionalNodes_i,
+	int i, restNodes_i, usedRestNodes_i, min_i, max_i, weight_i, additionalNodes_i,
 			parallelNodes_i;
 	float rest, accumulatedRest = 0.0;
 	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
@@ -309,7 +307,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	}
 	XMLremoveUnusedNodes(newXMLdoc);
 	xmlSaveFile(OUTPUT_XML_NAME, newXMLdoc);
-	xmlFree(docNew);
+	xmlFreeDoc(docNew);
 	//printf("XML DONE\n");
 	return newXMLdoc;
 }

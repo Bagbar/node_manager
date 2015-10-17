@@ -11,9 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
-#include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -45,8 +43,10 @@ struct get_Program
 {
 	/// let's getProgram return when it is waiting, when a file was received it does not do anything
 	char exitSignal;
+	char working;
 	struct cluster_info *clusterInfo_ptr;
 	struct cond_mtx *workReady_ptr;
+
 };
 
 /** \brief gets called when Node is elected as master, manages network exploration, job receiving and process distrubution
@@ -69,20 +69,24 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
  * if newList is 0 it checks if the same IP is in the list and marks the nodes as active if it is or adds if it is new and sorts the list
  * if newList is not 0 all received information is added and the list is sorted afterwards. No check for nodes already in the list is done.
  * in any case clusterInfo has to be configured correctly before
+ *
+ * returns the number of nodes in the networks with a higher priority
  */
-void readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8);
+int readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8);
 
 /** \brief calls readIdentifyAnswers and removes node that are not active from the list
  *
  *	this may be done in a thread
  */
-void updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
+int updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock);
 
 /** \brief sends information about the program files to the node
  *
  * sends the name of the script, the name of the work function and the size of the archive
  *
  * takes struct send_info as an argument
+ *
+ * returns the number of nodes in the networks with a higher priority
  */
 void *sendInfo(void *args);
 

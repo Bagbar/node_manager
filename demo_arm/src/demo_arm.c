@@ -20,12 +20,13 @@
 #include <errno.h>
 
 #define OLED 0x43C00000
-#define BUFFERSIZE 64
+#define BUFFERSIZE 65
 
 int write_oled(char * in);
 
 int main(int argc, char *argv[])
 {
+	printf("work:           started\n");
 	uint32_t IP; //network
 	int return_recv, return_send;
 	//struct sockaddr_in sender_addr;
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
 	int return_accept = accept(recv_sock, NULL,NULL);
 	if (return_accept < 0)
 		printf("accepterror:%s\n", strerror(errno));
-	printf("AAAASDASDASDASD: dest addr=%u",send_addr.sin_addr.s_addr);
+
 	int return_connect = connect(send_sock, (struct sockaddr*) &send_addr,sizeof(send_addr));
 	if (return_connect < 0)
 			printf("connecterror:%s\n", strerror(errno));
@@ -76,14 +77,15 @@ int main(int argc, char *argv[])
 		if (return_recv < 0)
 			printf("recverror:%s\n", strerror(errno));
 		else
-			printf("recv data = %d", return_recv);
-
+			printf("recv data = %d\n", return_recv);
+		puts(recvBuff);
 		write_oled(recvBuff);
 
 		strcpy(sendBuff,recvBuff);
-		strcat(sendBuff," ack\n");
-		return_send = send(send_sock,sendBuff,BUFFERSIZE,0);
+		strcat(sendBuff,"!");
+		return_send = send(send_sock,sendBuff,return_recv + 1,0);
 		printf("%s",sendBuff);
+		memset(recvBuff, 0, sizeof(recvBuff));
 	} while (strcmp(recvBuff,"end"));
 
 	//for (i = 0;i<10;i++) printf("%c,%c\n",sendBuff[i],recvBuff[i]);

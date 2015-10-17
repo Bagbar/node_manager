@@ -1,7 +1,5 @@
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
@@ -17,6 +15,7 @@
 
 int main(int argc, char *argv[])
 {
+	int i;
 	uint32_t IP;//network
 	int return_recv, return_send;
 	//struct sockaddr_in sender_addr;
@@ -49,7 +48,7 @@ int main(int argc, char *argv[])
 	memset(recvBuff, '0', sizeof(recvBuff));
 
 	char sendBuff[BUFFERSIZE];
-	memset(sendBuff, '0', sizeof(sendBuff));
+	memset(sendBuff, 0, sizeof(sendBuff));
 
 	FILE * pFile;
 
@@ -64,7 +63,6 @@ int main(int argc, char *argv[])
 
 	listen(recv_sock, 1);
 	sleep(2);
-	printf("AAAASDASDASDASD: dest addr=%u",send_addr.sin_addr.s_addr);
 	int return_connect = connect(send_sock, (struct sockaddr*) &send_addr,sizeof(send_addr));
 		if (return_connect < 0)
 				printf("work:connecterror:%s\n", strerror(errno));
@@ -77,16 +75,20 @@ int main(int argc, char *argv[])
 
 		printf("write message\n");
 		scanf("%s",sendBuff);
-		return_send = send(send_sock,sendBuff,BUFFERSIZE,0);
+		i=0;
+		while(sendBuff[i])
+			i++;
 
-		return_recv = recv(return_accept, recvBuff, BUFFERSIZE, 0);
+		return_send = send(send_sock,sendBuff,i,0);
+
+		return_recv = recv(return_accept, recvBuff, BUFFERSIZE+10, 0);
 				if (return_recv < 0)
 					printf("recverror:%s\n", strerror(errno));
 				else
-					printf("recv data = %d", return_recv);
+					printf("recv data = %d\n", return_recv);
 
 				fwrite(recvBuff,1,return_recv,pFile);
-				printf("%s",sendBuff);
+				printf("%s \t i=%d\n",sendBuff,i);
 	} while (strcmp(sendBuff,"end"));
 
 	//for (i = 0;i<10;i++) printf("%c,%c\n",sendBuff[i],recvBuff[i]);

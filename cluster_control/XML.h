@@ -42,7 +42,7 @@ xmlDocPtr XMLread(char *filename);
  */
 void XMLCleanup(xmlDocPtr doc, xmlDocPtr doc2, int *values);
 
-static void print_element_names(xmlNode * a_node);
+//static void print_element_names(xmlNode * a_node);
 
 /** \brief Creates a new xmlDoc which contains all data for the master
  *

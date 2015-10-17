@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -57,12 +56,7 @@ int main()
 		critErr("main:send_master_socket=");
 	}
 
-//	fillSockaddrAny(&any_addr, UDP_NODE_LISTEN_PORT);
-//
-//		if ((bind(mastBroad_sock, (struct sockaddr*) &any_addr, sizeof any_addr)) < 0)
-//		{
-//			critErr("main:bind rmastBroad_sock:");
-//		}
+
 	fcntl(mastBroad_sock, F_SETFL, O_NONBLOCK);
 	int broadcastEnable = 1;
 	int ret = setsockopt(mastBroad_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable,
@@ -84,14 +78,14 @@ int main()
 		}
 		if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
 			critErr("main: mutex_lock:");
-		//printf("<");
+
 
 		if (timeCount_mtx_sct.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: over_mutex_unlock:");
-			//printf(">\n");
+
 
 			//wait for 0-990ms(10ms spacing) to prevent broadcast flood
 			rnd_time.tv_nsec = ((long) (rand() % 100)) * 10000000L;
@@ -100,12 +94,12 @@ int main()
 			//still no master?
 			if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
 				critErr("main:no_master mutex_lock:");
-			//printf("<");
+
 			if (timeCount_mtx_sct.var != 0) //TODO has this to be volatile? and this expression should suffice
 			{
 				if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 					critErr("main:no_master mutex_unlock:");
-				//printf(">");
+
 
 				char timeout_detected = 't';
 				sendto(mastBroad_sock, &timeout_detected, 1, 0, (struct sockaddr*) &broad_addr, broad_len);
@@ -117,7 +111,7 @@ int main()
 			{
 				if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 					critErr("main:no_master mutex_unlock:");
-				//printf(">\n");
+
 			}
 
 		}
@@ -127,9 +121,7 @@ int main()
 			printf("main:increase timeCount_mtx_sct to:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: under_mutex_unlock:");
-			//printf(">\n");
 		}
-		// TODO (kami#9#): may use PING_PERIOD here
 		sleep(1);
 	}
 

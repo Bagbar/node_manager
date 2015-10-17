@@ -1,8 +1,6 @@
 /*
  * slave.c
  *
- *  Created on: 02.06.2015
- *      Author: xubuntu
  */
 
 #include "slave.h"
@@ -273,7 +271,7 @@ void *receive_info(void * args)
 		{
 		}
 		printf(
-				"slave:receive info: finished\t cancel =%d \tsize = %u\tworkname= %s\t scriptname= %s \n",
+				"slave:receive info: finished\t cancel =%d \tsize = %llu\tworkname= %s\t scriptname= %s \n",
 				recvBuff->cancel, recvBuff->file_size, recvBuff->workname, recvBuff->scriptname);
 		close(return_accept);
 		return NULL;
@@ -406,20 +404,31 @@ void *fetchDataAndExecute(void *args)
 		sprintf(command, "sh %s", recvInfoBuff.scriptname);
 		puts(command);
 		system(command);
-		workcall = malloc(IP_list_ptr->amount * 11 + 3 + sizeof(recvInfoBuff.workname));
+		workcall = malloc(IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname));
 		if (workcall == NULL)
 		{
 			printf("slave:fetch_data: char array workcall malloc error");
 			return NULL;
 		}
 
+
+
 		sprintf(workcall, "./%s", recvInfoBuff.workname);
-		char singleIP_c[11];
+		int i = 0;
+				while(workcall[i])
+					i++;
+				printf("slave: fetch data and execute: workcall=%s string length = %d",workcall,i);
+		char singleIP_c[13];
 		for (int i = 0; i < IP_list_ptr->amount; i++)
 		{
 			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
 			strcat(workcall, singleIP_c);
 		}
+	  i = 0;
+		while(workcall[i])
+			i++;
+		printf("slave: fetch data and execute: workcall string length = %d",i);
+
 		if (pthread_mutex_lock(&workReady_ptr->mtx))
 							perror("slave:fetch data and execute: work mutex lock\n");
 		printf("slave: fetch Data: condition mutex locked\n");
@@ -475,7 +484,7 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 		}
 		child = child->next;
 	}
-
+	printf("slave:get IP from XML: number of IP addresses = %d\n",i);
 	return IPlist_ptr;
 }
 
