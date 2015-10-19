@@ -48,6 +48,10 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 	getProgram_sct.exitSignal = 0;
 	getProgram_sct.clusterInfo_ptr = &clusterInfo_sct;
 	getProgram_sct.workReady_ptr = workReady_ptr;
+	if ((getProgram_sct.socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		critErr("master:get Program:wait_socket=");
+	}
 	if (pthread_create(&listenForData_thread, NULL, getProgram, &getProgram_sct))
 	{
 		critErr("pthread_create(getProgram)=");
@@ -117,10 +121,12 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 		{
 			printf("master: canceling get Program\n\n");
 			getProgram_sct.exitSignal = 1;
+			close(getProgram_sct.socket);
 			pthread_cancel(listenForData_thread);
 		}
 
 	}
+	close(recvIdent_sock);
 	free(clusterInfo_sct.node_data_list_ptr);
 	return 0;
 }
@@ -307,7 +313,7 @@ void *sendInfo(void *args)
 	int return_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (return_socket < 0)
 		printf("master: recv_info: socketerror:%s\n", strerror(errno));
-	printf("master:send_info: connect \n");
+	printf("master:send_info: connect %u\n", send_info_ptr->IP);
 	int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr));
 	if (return_connect < 0)
 		critErr("master: send_info: connecterror");
@@ -451,8 +457,9 @@ void* getFilesAndSend(void* args)
 						xmlDocSetRootElement(subDoc, newnode);
 						//printf("master:getFilesAndSend:doc set done \t \t node->next=%p\n",node->next);
 						char subDocName[30];
-						sprintf(subDocName, "%s.xml", (char*) node->name);
-
+						if (snprintf(subDocName, sizeof subDocName, "%s.xml", (char*) node->name)
+								> sizeof subDocName)
+							critErr("master:get files and send: snprint subDocname");
 						xmlSaveFile(subDocName, subDoc);
 
 						xmlFreeDoc(subDoc);
@@ -464,12 +471,16 @@ void* getFilesAndSend(void* args)
 						}
 						//printf("master:get files and send: filename =%p\t localname=%p\t *localname=%s\n \t\t subdocname=",filename, localname, localname, subDocName);
 						strcpy(&localname[endOfString_i], ".tar");
-						sprintf(&command[0], "tar -cf %s %s", filename, subDocName);
+						if (snprintf(&command[0], sizeof command, "tar -cf %s %s", filename, subDocName)
+								> sizeof command)
+							critErr("master:get files and send: snprint command tar-cf");
 						puts(command);
 						system(command);
 					}
 
-					sprintf(&command[0], "tar -rf %s %s", filename, (char*) xmlNodeGetContent(child));
+					if (snprintf(&command[0], sizeof command, "tar -rf %s %s", filename,
+							(char*) xmlNodeGetContent(child)) > sizeof command)
+						critErr("master:get files and send: snprint command tar -rf");
 					puts(command);
 					system(command);
 					//printf("master:get files and send: system = %d\t command= %s \n", system(command),command);
@@ -482,7 +493,9 @@ void* getFilesAndSend(void* args)
 	}
 	else
 	{
-		sprintf(errormessage, "master:distributeData:No files in %s", (char*) node->name);
+		if (snprintf(errormessage, sizeof errormessage, "master:distributeData:No files in %s",
+				(char*) node->name) > sizeof errormessage)
+			critErr("master:get files and send: snprint error no files");
 		puts(errormessage);
 		return errormessage;
 	}
@@ -499,7 +512,9 @@ void* getFilesAndSend(void* args)
 		}
 		else
 		{
-			sprintf(errormessage, "master:distributeData: pointer error");
+			if (snprintf(errormessage, sizeof errormessage, "master:distributeData: pointer error")
+					> sizeof errormessage)
+				critErr("master:get files and send: snprint pointer error");
 			puts(errormessage);
 			return errormessage;
 		}
@@ -507,7 +522,7 @@ void* getFilesAndSend(void* args)
 
 	sendInfo_sct.file_size = fsize(filename);
 	//printf("master:getFilesAndSend:generating sendFile \t \t node=%p\n",node);
-	sendInfo_sct.IP = htonl((uint32_t) strtol((char*) &(node->name[3]), NULL, 10));
+	sendInfo_sct.IP = htonl((uint32_t) strtoul((char*) &(node->name[3]), NULL, 10));
 	//printf("nodename = %s \t recoveredIP = %u\n", (char*) node->name, ntohl(sendInfo_sct.IP));
 
 	sendFile_sct.IP = sendInfo_sct.IP;
@@ -560,35 +575,32 @@ void * getProgram(void * args)
 {
 
 	struct get_Program *getProgram_ptr = args;
+	int waitForBroadcast_sock = getProgram_ptr->socket;
 	printf("master:get Program: exit signal = %d\n", getProgram_ptr->exitSignal);
+	struct sockaddr_in listen_addr, connect_addr;
+
+	fillSockaddrAny(&listen_addr, UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER);
+	if ((bind(waitForBroadcast_sock, (struct sockaddr*) &listen_addr, sizeof(listen_addr))) < 0)
+	{
+		critErr("master:get Program:bind elect_recv_sock:");
+	}
+	fcntl(waitForBroadcast_sock, F_SETFL, O_NONBLOCK);
+
 	while (getProgram_ptr->exitSignal == 0)
 	{
 		int recvReturn_i = 0, continue_i = 1, received_i = 0, result = 0, sendReturn_i;
 		FILE * pFile;
-		int waitForBroadcast_sock, openConnection_sock, returnSolution_sock;
+		int openConnection_sock, returnSolution_sock;
 		char listenBuff[10], buffer[BUFFERSIZE], ack[4] = "ack";
 
-		struct sockaddr_in listen_addr, connect_addr;
 		socklen_t connect_len = sizeof connect_addr;
 
 		xmlDocPtr Distribution_ptr = NULL;
-
-		if ((waitForBroadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-		{
-			critErr("master:get Program:wait_socket=");
-		}
 
 		if ((openConnection_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		{
 			critErr("master:get Program:connect_socket=");
 		}
-
-		fillSockaddrAny(&listen_addr, UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER);
-		if ((bind(waitForBroadcast_sock, (struct sockaddr*) &listen_addr, sizeof(listen_addr))) < 0)
-		{
-			critErr("master:get Program:bind elect_recv_sock:");
-		}
-		fcntl(waitForBroadcast_sock, F_SETFL, O_NONBLOCK);
 
 		do
 		{
@@ -635,7 +647,7 @@ void * getProgram(void * args)
 
 				sendto(waitForBroadcast_sock, &ack[0], sizeof ack, 0, (struct sockaddr*) &connect_addr,
 						connect_len);
-				close(waitForBroadcast_sock);
+
 				sleep(1);
 				connect_addr.sin_port = htons(TCP_GET_PROGRAM);
 				//printf("master:getProgram: connecting\n");
@@ -709,7 +721,9 @@ void * getProgram(void * args)
 			{
 				char msg[60];
 				memset(msg, 0, sizeof msg);
-				sprintf(msg, "master: get Program:return file error:%d", errno);
+				if (snprintf(msg, sizeof msg, "master: get Program:return file error:%d", errno)
+						> sizeof msg)
+					critErr("master:get Program: snprint msg fileerrror");
 				puts(msg);
 				send(returnSolution_sock, msg, sizeof(msg), 0);
 			}
@@ -757,7 +771,9 @@ void * distributeData(void * args)
 	pthread_t *send_threads = malloc(allocatedThreads_i * sizeof(pthread_t));
 	if (send_threads == NULL)
 	{
-		sprintf(errormessage, "master:distributeData: malloc failed");
+		if (snprintf(errormessage, sizeof errormessage, "master:distributeData: malloc failed")
+				> sizeof errormessage)
+			critErr("master:distribute date: snprint malloc failed");
 		puts(errormessage);
 		return errormessage;
 	}

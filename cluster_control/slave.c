@@ -392,27 +392,32 @@ void *fetchDataAndExecute(void *args)
 		receive_file(&recvFile_sct);
 		printf("slave:fetch data and execute: file fetched\n");
 
-		sprintf(command, "tar xzf %s", NODE_ARCHIVE_NAME);
+		if (snprintf(command, sizeof command, "tar xzf %s", NODE_ARCHIVE_NAME) > sizeof command)
+			critErr("slave fetch data and execute: snprint error tar xzf");
 		system(command);
 
-		sprintf(xmlName, "IP_%u.xml", ownIP);
+		if (snprintf(xmlName, sizeof xmlName, "IP_%u.xml", ownIP) > sizeof command)
+			critErr("slave fetch data and execute: snprint error xmlName");
 		printf("generated name of the xml file is %s\n", xmlName);
 		xmlDocPtr doc = xmlParseFile(xmlName);
 		IP_list_ptr = getIPfromXML(doc);
 		xmlFree(doc);
-		sprintf(command, "sh %s", recvInfoBuff.scriptname);
+		if (snprintf(command, sizeof command, "sh %s", recvInfoBuff.scriptname) > sizeof command)
+			critErr("slave fetch data and execute: snprint error shell");
 		puts(command);
 		system(command);
-		workcall = malloc(IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname));
-		printf("slave:fetch Data And Execute: allocated = %d",IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname));
-		mypause();
+		int mall_i = IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname);
+		workcall = malloc(mall_i);
+		printf("slave:fetch Data And Execute: allocated = %d", mall_i);
+
 		if (workcall == NULL)
 		{
 			printf("slave:fetch_data: char array workcall malloc error");
 			return NULL;
 		}
 
-		sprintf(workcall, "./%s", recvInfoBuff.workname);
+		if (snprintf(workcall, mall_i, "./%s", recvInfoBuff.workname) > mall_i)
+			critErr("slave fetch data and execute: snprint workcall 1");
 		int i = 0;
 		while (workcall[i])
 			i++;
@@ -421,7 +426,8 @@ void *fetchDataAndExecute(void *args)
 		char singleIP_c[13];
 		for (int i = 0; i < IP_list_ptr->amount; i++)
 		{
-			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
+			if (snprintf(singleIP_c, sizeof singleIP_c, " %u", IP_list_ptr->IP[i]) > sizeof singleIP_c)
+				critErr("slave fetch data and execute: snprint single IP");
 			strcat(workcall, singleIP_c);
 		}
 		i = 0;

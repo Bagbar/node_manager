@@ -44,6 +44,7 @@ struct get_Program
 	char working;
 	struct cluster_info *clusterInfo_ptr;
 	struct cond_mtx *workReady_ptr;
+	int socket;
 
 };
 

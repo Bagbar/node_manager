@@ -130,7 +130,7 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	curOld = rootOld->children;
 
 	printf("new Doc generated\n");
-	char IP_str[13];
+	char IP_str[16];
 	//pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	restNodes_i = clusterInfo_ptr->numNodes_size - values[MIN_SHIFT];
 	printf("numnodes = %u\n", clusterInfo_ptr->numNodes_size);
@@ -139,7 +139,9 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	for (int i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
 		//printf("%d\n", i);
-		sprintf(IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32);
+		if (snprintf(IP_str, sizeof IP_str, "IP_%u", clusterInfo_ptr->node_data_list_ptr[i].ip_u32)
+				> sizeof IP_str)
+			critErr("XML: build XML : snprint IP_str");
 		//printf("listip=%u\townIP=%u\n", clusterInfo_ptr->node_data_list_ptr[i].ip_u32, ownIP);
 		curNew = xmlNewChild(rootNew, NULL, (xmlChar *) IP_str, NULL);
 		if (clusterInfo_ptr->node_data_list_ptr[i].ip_u32 == ownIP)
@@ -236,7 +238,9 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 							xmlSetProp(curNew, (xmlChar *) "id", id_str);
 
 							curNew->children = curOld->children;
-							sprintf((char*) partnumber_str, "%d", i);
+							if (snprintf((char*) partnumber_str, sizeof partnumber_str, "%d", i)
+									> sizeof partnumber_str)
+								critErr("XML: build XML: snprint partnumber");
 							xmlSetProp(curNew, (xmlChar*) "part", partnumber_str);
 							//if(xmlStrcmp(curNew->name, (const xmlChar *) "IP_269488144"))
 							{
