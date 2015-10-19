@@ -36,13 +36,15 @@ int main()
 
 	int mastBroad_sock;
 
-	struct sockaddr_in broad_addr, loop_addr, any_addr;
+	struct sockaddr_in broad_addr, loop_addr;
 	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
 
-	struct var_mtx timeCount_mtx_sct =	{ 1, PTHREAD_MUTEX_INITIALIZER };
-	struct cond_mtx workReady_condMtx={PTHREAD_COND_INITIALIZER,PTHREAD_MUTEX_INITIALIZER};
+	struct var_mtx timeCount_mtx_sct =
+	{ 1, PTHREAD_MUTEX_INITIALIZER };
+	struct cond_mtx workReady_condMtx =
+	{ PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
 	struct slave_args slaveMain_args =
-	{&workReady_condMtx, &timeCount_mtx_sct, &master_i, &subgroup_u8 };
+	{ &workReady_condMtx, &timeCount_mtx_sct, &master_i, &subgroup_u8 };
 
 	pthread_t slave_thread;
 	if (pthread_create(&slave_thread, NULL, slave_main, (void*) &slaveMain_args))
@@ -55,7 +57,6 @@ int main()
 	{
 		critErr("main:send_master_socket=");
 	}
-
 
 	fcntl(mastBroad_sock, F_SETFL, O_NONBLOCK);
 	int broadcastEnable = 1;
@@ -73,19 +74,19 @@ int main()
 		if (master_i)
 		{
 			printf("main:I am master and start control function counter mutex is not locked\n");
-			master_main(mastBroad_sock,&workReady_condMtx);
+			master_main(mastBroad_sock, &workReady_condMtx);
+			pthread_mutex_lock(&(timeCount_mtx_sct.mtx));
 			master_i = 0;
+			pthread_mutex_unlock(&(timeCount_mtx_sct.mtx));
 		}
 		if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
 			critErr("main: mutex_lock:");
-
 
 		if (timeCount_mtx_sct.var > PING_PERIOD * TIMEOUT_PERIODS)
 		{
 			printf("main:timecount_over_limit:%d\n", timeCount_mtx_sct.var);
 			if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 				critErr("main: over_mutex_unlock:");
-
 
 			//wait for 0-990ms(10ms spacing) to prevent broadcast flood
 			rnd_time.tv_nsec = ((long) (rand() % 100)) * 10000000L;
@@ -95,11 +96,10 @@ int main()
 			if (pthread_mutex_lock(&timeCount_mtx_sct.mtx))
 				critErr("main:no_master mutex_lock:");
 
-			if (timeCount_mtx_sct.var != 0) //TODO has this to be volatile? and this expression should suffice
+			if (timeCount_mtx_sct.var != 0)
 			{
 				if (pthread_mutex_unlock(&timeCount_mtx_sct.mtx))
 					critErr("main:no_master mutex_unlock:");
-
 
 				char timeout_detected = 't';
 				sendto(mastBroad_sock, &timeout_detected, 1, 0, (struct sockaddr*) &broad_addr, broad_len);
@@ -113,7 +113,6 @@ int main()
 					critErr("main:no_master mutex_unlock:");
 
 			}
-
 		}
 		else
 		{

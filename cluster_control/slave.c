@@ -23,10 +23,9 @@ void *slave_main(void *args_ptr)
 	char recvBuff[5];
 	memset(recvBuff, '0', sizeof recvBuff);
 
-
-
 	pthread_t waitForData_thread;
-	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute, (void*) ((struct slave_args*) args_ptr)->workReady_ptr))
+	if (pthread_create(&waitForData_thread, NULL, fetchDataAndExecute,
+			(void*) ((struct slave_args*) args_ptr)->workReady_ptr))
 	{
 		critErr("slave:pthread_create(recv_info)=");
 	}
@@ -111,7 +110,7 @@ void *slave_main(void *args_ptr)
 			////printf("slave_main: MUTEX LOCKED\n");
 			if (timeoutCounter_ptr->var > 1)
 			{
-				timeoutCounter_ptr->var = 0;
+				timeoutCounter_ptr->var = -5;
 				*master_ptr = elect_master(electRecv_sock);
 			}
 			//printf("slave_main:master= %d\n", *master_ptr);
@@ -135,11 +134,11 @@ int elect_master(int electRecv_sock)
 	printf("slave:electing master:\n");
 	uint8_t typeMAC_self[IDENTIFIER_LENGTH];
 	typeMAC_self[0] = FPGATYPE;
-	typeMAC_self[7] = CLUSTERGROUP;
+	typeMAC_self[1] = CLUSTERGROUP;
 	int i;
 	for (i = 0; i < 6; i++)
 	{
-		typeMAC_self[i + 1] = mac[i];
+		typeMAC_self[i + 2] = mac[i];
 	}
 
 	uint8_t typeMAC_other[IDENTIFIER_LENGTH];
@@ -176,7 +175,7 @@ int elect_master(int electRecv_sock)
 	{
 		// Receive msg from other boards
 		recvReturn_i = recvfrom(electRecv_sock, &typeMAC_other[0], sizeof(typeMAC_other), 0, NULL,
-				NULL);
+		NULL);
 
 		printf("returnrecv=%d\n", recvReturn_i);
 		if (recvReturn_i != sizeof(typeMAC_self))
@@ -256,8 +255,9 @@ void *receive_info(void * args)
 		printf("slave:recvInfo: accepted sizeof recvBuff = %u\n", sizeof(*recvBuff));
 		recv(return_accept, recvBuff, sizeof(*recvBuff), 0);
 		printf("slave:recvInfo: received");
-		if (recvBuff->cancel == 1) // TODO insert cancel function
+		if (recvBuff->cancel == 1)
 		{
+			// TODO insert cancel function
 			//pthread_cancel(work_thread);
 			check_u8 = WORK_THREAD_CANCELED;
 		}
@@ -277,6 +277,7 @@ void *receive_info(void * args)
 		return NULL;
 	}
 	close(return_socket);
+	return NULL;
 }
 
 //fetches the files
@@ -329,7 +330,7 @@ void *receive_file(void * args)
 
 			fwrite(recvBuff, 1, recv_return_i, pFile);
 			file_size += recv_return_i;
-		} while (recv_return_i > 0); // == BUFFERSIZE); //TODO maybe change
+		} while (recv_return_i > 0); // == BUFFERSIZE);
 
 		fclose(pFile);
 		file_info_ptr->recv_size = file_size;
@@ -386,8 +387,6 @@ void *fetchDataAndExecute(void *args)
 
 	while (1)
 	{
-
-
 		receive_info(&recvInfo_sct);
 		recvFile_sct.expected_size = recvInfoBuff.file_size;
 		receive_file(&recvFile_sct);
@@ -405,37 +404,38 @@ void *fetchDataAndExecute(void *args)
 		puts(command);
 		system(command);
 		workcall = malloc(IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname));
+		printf("slave:fetch Data And Execute: allocated = %d",IP_list_ptr->amount * 13 + 3 + sizeof(recvInfoBuff.workname));
+		mypause();
 		if (workcall == NULL)
 		{
 			printf("slave:fetch_data: char array workcall malloc error");
 			return NULL;
 		}
 
-
-
 		sprintf(workcall, "./%s", recvInfoBuff.workname);
 		int i = 0;
-				while(workcall[i])
-					i++;
-				printf("slave: fetch data and execute: workcall=%s string length = %d",workcall,i);
+		while (workcall[i])
+			i++;
+		printf("slave: fetch data and execute: workcall=%s string length = %d", workcall, i);
+
 		char singleIP_c[13];
 		for (int i = 0; i < IP_list_ptr->amount; i++)
 		{
 			sprintf(singleIP_c, " %u", IP_list_ptr->IP[i]);
 			strcat(workcall, singleIP_c);
 		}
-	  i = 0;
-		while(workcall[i])
+		i = 0;
+		while (workcall[i])
 			i++;
-		printf("slave: fetch data and execute: workcall string length = %d",i);
+		printf("slave: fetch data and execute: workcall string length = %d", i);
 
 		if (pthread_mutex_lock(&workReady_ptr->mtx))
-							perror("slave:fetch data and execute: work mutex lock\n");
+			perror("slave:fetch data and execute: work mutex lock\n");
 		printf("slave: fetch Data: condition mutex locked\n");
 		printf("\nstarting work :  %s\n", workcall);
 
 		printf("\nfinished work : %d\n", system(workcall));
-		if(pthread_cond_signal(&workReady_ptr->cond))
+		if (pthread_cond_signal(&workReady_ptr->cond))
 			perror("slave:fetch data and execute: condition signal");
 		printf("slave: fetch Data: condition signal\n");
 		if (pthread_mutex_unlock(&workReady_ptr->mtx))
@@ -484,7 +484,7 @@ struct IP_list *getIPfromXML(xmlDocPtr doc)
 		}
 		child = child->next;
 	}
-	printf("slave:get IP from XML: number of IP addresses = %d\n",i);
+	printf("slave:get IP from XML: number of IP addresses = %d\n", i);
 	return IPlist_ptr;
 }
 

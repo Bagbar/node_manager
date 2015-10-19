@@ -20,8 +20,6 @@
 #include "XML.h"
 #include "basics.h"
 
-//TODO add documentation for pthreadable function parameters
-
 /// arguments for sendInfo function contains target IP and size of the file
 struct send_info
 {

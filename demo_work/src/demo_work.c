@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
 
 	if(argc >1){
-		IP = htonl((uint32_t) strtol( (argv[1]), NULL, 10));
+		IP = htonl((uint32_t) strtoul( (argv[1]), NULL, 10));
 	send_addr.sin_family =AF_INET;
 	send_addr.sin_port = htons(50505);
 	send_addr.sin_addr.s_addr=IP;

@@ -75,7 +75,6 @@ uint32_t getIP()
 			IP = inet_addr(host);
 
 		}
-		//TODO check if this does not activate if eth1 is not active
 		if (!strcmp(ifa->ifa_name, "eth1") && family == AF_INET)
 		{
 			printf("%-8s %s (%d)\n", ifa->ifa_name, (family == AF_INET) ? "AF_INET" : "???", family);
@@ -125,15 +124,16 @@ uint64_t MACtoDecimal(uint8_t *mac)
 
 int compareNodes(const void * a, const void * b)
 {
-	if ((*(struct node_data*) a).ip_u32 < (*(struct node_data*) b).ip_u32)
-		return -1;
-	if ((*(struct node_data*) a).ip_u32 == (*(struct node_data*) b).ip_u32)
-		return 0;
-	if ((*(struct node_data*) a).ip_u32 > (*(struct node_data*) b).ip_u32)
-		return 1;
-
-	//alternativly
-	//return ( (*(struct node_data*)a).ip_u32 - (*(struct node_data*)b).ip_u32 );
+	/*
+	 if ((*(struct node_data*) a).ip_u32 < (*(struct node_data*) b).ip_u32)
+	 return -1;
+	 if ((*(struct node_data*) a).ip_u32 == (*(struct node_data*) b).ip_u32)
+	 return 0;
+	 if ((*(struct node_data*) a).ip_u32 > (*(struct node_data*) b).ip_u32)
+	 return 1;
+	 */
+	//alternatively
+	return ((*(struct node_data*) a).ip_u32 - (*(struct node_data*) b).ip_u32);
 }
 
 char* hostToDottedIP(uint32_t ip)

@@ -10,18 +10,18 @@
 extern uint32_t ownIP;
 
 /*static void print_element_names(xmlNode * a_node)
-{
-	xmlNode *cur_node = NULL;
+ {
+ xmlNode *cur_node = NULL;
 
-	for (cur_node = a_node; cur_node; cur_node = cur_node->next)
-	{
-		if (cur_node->type == XML_ELEMENT_NODE)
-		{
-			printf("node type: Element, name: %s\n", cur_node->name);
-		}
-		print_element_names(cur_node->children);
-	}
-}*/
+ for (cur_node = a_node; cur_node; cur_node = cur_node->next)
+ {
+ if (cur_node->type == XML_ELEMENT_NODE)
+ {
+ printf("node type: Element, name: %s\n", cur_node->name);
+ }
+ print_element_names(cur_node->children);
+ }
+ }*/
 
 int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 {
@@ -88,7 +88,7 @@ int *XMLGetMinNodeAndTotalWeight(xmlDocPtr doc)
 	return values_ptr;
 }
 
-void get_id(xmlDocPtr doc, xmlNodePtr cur)
+void get_id(xmlNodePtr cur)
 {
 
 	xmlChar *uri;
@@ -111,9 +111,8 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	xmlNodePtr rootOld = NULL, rootNew = NULL, curNew = NULL, curOld = NULL, masterOld = NULL, child =
 	NULL, destSearch = NULL;
 	xmlChar *destination_str, *id_str;
-	xmlChar partnumber_str[10];
-	int i, restNodes_i, usedRestNodes_i, min_i, max_i, weight_i, additionalNodes_i,
-			parallelNodes_i;
+	xmlChar partnumber_str[13];
+	int i, restNodes_i, usedRestNodes_i, min_i, max_i, weight_i, additionalNodes_i, parallelNodes_i;
 	float rest, accumulatedRest = 0.0;
 	xmlDocPtr docNew = xmlNewDoc((const xmlChar*) "1.0");
 	rootNew = xmlNewNode(NULL, (const xmlChar*) "Nodes");
@@ -131,10 +130,10 @@ xmlDocPtr buildCompleteXML(xmlDocPtr docOld, struct cluster_info *clusterInfo_pt
 	curOld = rootOld->children;
 
 	printf("new Doc generated\n");
-	char IP_str[11];
+	char IP_str[13];
 	//pthread_mutex_lock(&clusterInfo_ptr->mtx);
 	restNodes_i = clusterInfo_ptr->numNodes_size - values[MIN_SHIFT];
-	printf("numnodes = %d\n", clusterInfo_ptr->numNodes_size);
+	printf("numnodes = %u\n", clusterInfo_ptr->numNodes_size);
 
 	// generate entry for every available node
 	for (int i = 0; i < clusterInfo_ptr->numNodes_size; i++)

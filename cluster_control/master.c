@@ -22,7 +22,6 @@ void mypause(void)
 
 int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 {
-	int betternodes_i=0;
 	//printf("master_main started\n");
 	char keep_alive_c = KEEP_ALIVE_SIGNAL, identify_node_c = IDENTIFY_SIGNAL;
 
@@ -48,14 +47,14 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 	getProgram_sct.working = 0;
 	getProgram_sct.exitSignal = 0;
 	getProgram_sct.clusterInfo_ptr = &clusterInfo_sct;
-	getProgram_sct.workReady_ptr=workReady_ptr;
+	getProgram_sct.workReady_ptr = workReady_ptr;
 	if (pthread_create(&listenForData_thread, NULL, getProgram, &getProgram_sct))
 	{
 		critErr("pthread_create(getProgram)=");
 	}
 
 	struct sockaddr_in broad_addr, loop_addr, recv_addr;
-	socklen_t broad_len = sizeof broad_addr, recv_len = sizeof recv_addr, loop_len = sizeof loop_addr;
+	socklen_t broad_len = sizeof broad_addr, loop_len = sizeof loop_addr;
 
 	fillSockaddrLoop(&loop_addr, UDP_NODE_LISTEN_PORT);
 	fillSockaddrBroad(&broad_addr, UDP_NODE_LISTEN_PORT);
@@ -79,7 +78,11 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 	 loop_len);
 	 */
 
-	readIdentifyAnswers(recvIdent_sock, &clusterInfo_sct, 1);
+	if (readIdentifyAnswers(recvIdent_sock, &clusterInfo_sct, 1))
+	{
+		master_i = 0;
+		printf("master: better master present quiting\n");
+	}
 
 	printf("master:\t\tnodes in cluster = %u\n", clusterInfo_sct.numNodes_size);
 
@@ -93,8 +96,11 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 
 			sendto(mastBroad_sock, &identify_node_c, sizeof identify_node_c, 0,
 					(struct sockaddr*) &loop_addr, loop_len);
-			if( updateClusterInfo(&clusterInfo_sct, recvIdent_sock) && getProgram_sct.working == 0){
-				master_i = 0;printf("????????????????????????????????????");} //TODO switch: quit master when higher priority is present
+			if (updateClusterInfo(&clusterInfo_sct, recvIdent_sock) && getProgram_sct.working == 0)
+			{
+				master_i = 0;
+				printf("master: better master present quiting\n");
+			} //TODO switch when "better" master present
 			printf("master:\t\tnodes in cluster = %u\n", clusterInfo_sct.numNodes_size);
 		}
 		else
@@ -107,13 +113,12 @@ int master_main(int mastBroad_sock, struct cond_mtx *workReady_ptr)
 		sleep(PING_PERIOD);
 		identify_counter_i = (identify_counter_i + 1) % PINGS_PER_IDENTIFY;
 		//printf("master:identify_counter=%d\n", identify_counter_i);
-		if(master_i==0)
+		if (master_i == 0)
 		{
 			printf("master: canceling get Program\n\n");
-			getProgram_sct.exitSignal =1;
+			getProgram_sct.exitSignal = 1;
 			pthread_cancel(listenForData_thread);
 		}
-
 
 	}
 	free(clusterInfo_sct.node_data_list_ptr);
@@ -125,7 +130,7 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 	int size_i;
 	void *newList_ptr;
 	if (pthread_mutex_lock(&clusterInfo_ptr->mtx))
-			perror("master:addNode: mutex lock:");
+		perror("master:addNode: mutex lock:");
 	if (clusterInfo_ptr->numNodes_size >= clusterInfo_ptr->size)
 	{
 		size_i = clusterInfo_ptr->size + REALLOC_STEPSIZE;
@@ -148,18 +153,17 @@ void addNode2List(struct cluster_info *clusterInfo_ptr, uint32_t ip_u32, uint8_t
 	newNode->group_u8 = typeAndGroup[1];
 	newNode->lastAlive_u8 = clusterInfo_ptr->alive_count_u8;
 	newNode->nowActive_u8 = 0;
-	printf("ip=%u \t type = %u added \t IP_dotted=%s\n",
-			newNode->ip_u32, typeAndGroup[0],
+	printf("ip=%u \t type = %u added \t IP_dotted=%s\n", newNode->ip_u32, typeAndGroup[0],
 			hostToDottedIP(newNode->ip_u32));
 
 	clusterInfo_ptr->numNodes_size++;
 	if (pthread_mutex_unlock(&clusterInfo_ptr->mtx))
-	perror("master:addNode: mutex unlock:");
+		perror("master:addNode: mutex unlock:");
 }
 
 int readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, uint8_t newList_u8)
 {
-	int return_value=0;
+	int return_value = 0;
 	//printf("master:readIdentifyAnswers started\n");
 	int timeout_i = TIMEOUT, returnRecv_i;
 	uint8_t typeAndGroup[2];
@@ -197,7 +201,7 @@ int readIdentifyAnswers(int receive_sock, struct cluster_info *clusterInfo_ptr, 
 		}
 		else
 		{
-			if(typeAndGroup[0]<FPGATYPE)
+			if (typeAndGroup[0] < FPGATYPE)
 			{
 				return_value++;
 			}
@@ -245,23 +249,25 @@ int updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 {
 	//printf("master: updateClusterInfo: start\n");
 	int i, outdated_i = 0;
-//	int timeout_i = TIMEOUT, returnRecv_i;
-//
-//	struct node_data *searchReturn_ptr;
-//	uint8_t boardtype_u8;
-//	socklen_t response_len;
+	if (pthread_mutex_lock(&clusterInfo_ptr->mtx))
+		perror("master:updateCluster: mutex lock:");
 	clusterInfo_ptr->alive_count_u8++;
-
+	if (pthread_mutex_unlock(&clusterInfo_ptr->mtx))
+		perror("master:updateCluster: mutex unlock:");
 	int return_value = readIdentifyAnswers(receive_sock, clusterInfo_ptr, 0);
 
 	// remove non active nodes
+	if (pthread_mutex_lock(&clusterInfo_ptr->mtx))
+		perror("master:updateCluster: mutex lock:");
 	for (i = 0; i < clusterInfo_ptr->numNodes_size; i++)
 	{
 		if (clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8 != clusterInfo_ptr->alive_count_u8)
 		{
-			printf("master: update Info : removing node counter = %d\t ip = %u \t dotted:%s\n",clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8,clusterInfo_ptr->node_data_list_ptr[i].ip_u32,hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[i].ip_u32));
+			printf("master: update Info : removing node counter = %d\t ip = %u \t dotted:%s\n",
+					clusterInfo_ptr->node_data_list_ptr[i].lastAlive_u8,
+					clusterInfo_ptr->node_data_list_ptr[i].ip_u32,
+					hostToDottedIP(clusterInfo_ptr->node_data_list_ptr[i].ip_u32));
 			clusterInfo_ptr->node_data_list_ptr[i].ip_u32 = -1;
-			clusterInfo_ptr->node_data_list_ptr->nowActive_u8 = 0;
 
 			outdated_i++;
 		}
@@ -269,8 +275,7 @@ int updateClusterInfo(struct cluster_info *clusterInfo_ptr, int receive_sock)
 	//printf("master:updateCluster:outdated = %d\n",outdated_i);
 	qsort(clusterInfo_ptr->node_data_list_ptr, clusterInfo_ptr->numNodes_size,
 			sizeof(struct node_data), compareNodes);
-	if (pthread_mutex_lock(&clusterInfo_ptr->mtx))
-		perror("master:updateCluster: mutex lock:");
+
 	clusterInfo_ptr->numNodes_size = clusterInfo_ptr->numNodes_size - outdated_i;
 	if (pthread_mutex_unlock(&clusterInfo_ptr->mtx))
 		perror("master:updateCluster: mutex unlock:");
@@ -343,7 +348,7 @@ void *sendFile(void *args)
 		critErr("master:send_info: socket error:");
 	do
 	{
-		printf("AAAASDASDASDASD: dest addr=%u",dest_addr.sin_addr.s_addr);
+		printf("master:send_file: dest addr=%u", dest_addr.sin_addr.s_addr);
 		int return_connect = connect(return_socket, (struct sockaddr*) &dest_addr, sizeof(dest_addr));
 		if (return_connect < 0)
 			critErr("master:send_file:connect error:");
@@ -420,8 +425,8 @@ void* getFilesAndSend(void* args)
 
 		while (child)
 		{
-			printf("master:get files and send: child = %s \t type=%d \t content=%s\n", child->name,child->type, xmlNodeGetContent(child));
-
+			printf("master:get files and send: child = %s \t type=%d \t content=%s\n", child->name,
+					child->type, xmlNodeGetContent(child));
 
 			if (child->type == XML_ELEMENT_NODE)
 			{
@@ -445,8 +450,9 @@ void* getFilesAndSend(void* args)
 							critErr("master_getfilesandsend: node copy error");
 						xmlDocSetRootElement(subDoc, newnode);
 						//printf("master:getFilesAndSend:doc set done \t \t node->next=%p\n",node->next);
-						char subDocName[20];
+						char subDocName[30];
 						sprintf(subDocName, "%s.xml", (char*) node->name);
+
 						xmlSaveFile(subDocName, subDoc);
 
 						xmlFreeDoc(subDoc);
@@ -478,7 +484,7 @@ void* getFilesAndSend(void* args)
 	{
 		sprintf(errormessage, "master:distributeData:No files in %s", (char*) node->name);
 		puts(errormessage);
-		return errormessage; //FIXME maybe not ideal to give that address back but works for now
+		return errormessage;
 	}
 	//printf("master:getFileandSend: endOfString = %d\n", endOfString_i);
 	if (endOfString_i > 0) //i is the position of ".tar" in the filename for the archive if 0 no archive was generated
@@ -495,7 +501,7 @@ void* getFilesAndSend(void* args)
 		{
 			sprintf(errormessage, "master:distributeData: pointer error");
 			puts(errormessage);
-			return errormessage; //FIXME
+			return errormessage;
 		}
 	}
 
@@ -525,23 +531,23 @@ void* createDistributionXML(void *args)
 		printf("XML File not correct\n");
 		return NULL;
 	}
-	if(pthread_mutex_lock(&clusterInfo_ptr->mtx))
-	perror("master:create Distribution XML: mutex lock:");
+	if (pthread_mutex_lock(&clusterInfo_ptr->mtx))
+		perror("master:create Distribution XML: mutex lock:");
 	values = XMLGetMinNodeAndTotalWeight(inputXML);
 
 	if (values[MIN_SHIFT] > clusterInfo_ptr->numNodes_size)
 	{
 		printf("too few nodes available\t available =%u\t needed =%d\n", clusterInfo_ptr->numNodes_size,
 				values[MIN_SHIFT]);
-		if(pthread_mutex_unlock(&clusterInfo_ptr->mtx))
-		perror("master:create Distribution XML: mutex unlock:");
+		if (pthread_mutex_unlock(&clusterInfo_ptr->mtx))
+			perror("master:create Distribution XML: mutex unlock:");
 		return NULL;
 	}
 	else
 	{
 		outputXML = buildCompleteXML(inputXML, clusterInfo_ptr, values);
-		if(pthread_mutex_unlock(&clusterInfo_ptr->mtx))
-				perror("master:create Distribution XML: mutex unlock:");
+		if (pthread_mutex_unlock(&clusterInfo_ptr->mtx))
+			perror("master:create Distribution XML: mutex unlock:");
 	}
 
 	xmlFreeDoc(inputXML);
@@ -554,183 +560,189 @@ void * getProgram(void * args)
 {
 
 	struct get_Program *getProgram_ptr = args;
-	printf("master:get Program: exit signal = %d\n",getProgram_ptr->exitSignal);
-	while(getProgram_ptr->exitSignal==0)
+	printf("master:get Program: exit signal = %d\n", getProgram_ptr->exitSignal);
+	while (getProgram_ptr->exitSignal == 0)
 	{
-	int recvReturn_i = 0, continue_i = 1, received_i = 0, result=0, sendReturn_i;
-	FILE * pFile;
-	int waitForBroadcast_sock, openConnection_sock,returnSolution_sock;
-	char listenBuff[10], buffer[BUFFERSIZE], ack[4] = "ack";
+		int recvReturn_i = 0, continue_i = 1, received_i = 0, result = 0, sendReturn_i;
+		FILE * pFile;
+		int waitForBroadcast_sock, openConnection_sock, returnSolution_sock;
+		char listenBuff[10], buffer[BUFFERSIZE], ack[4] = "ack";
 
-	struct sockaddr_in listen_addr, connect_addr;
-	socklen_t listen_len = sizeof listen_addr, connect_len = sizeof connect_addr;
+		struct sockaddr_in listen_addr, connect_addr;
+		socklen_t connect_len = sizeof connect_addr;
 
-	xmlDocPtr Distribution_ptr = NULL;
+		xmlDocPtr Distribution_ptr = NULL;
 
-	if ((waitForBroadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	{
-		critErr("master:get Program:wait_socket=");
-	}
-
-	if ((openConnection_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-	{
-		critErr("master:get Program:connect_socket=");
-	}
-
-	fillSockaddrAny(&listen_addr, UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER);
-	if ((bind(waitForBroadcast_sock, (struct sockaddr*) &listen_addr, sizeof(listen_addr))) < 0)
-	{
-		critErr("master:get Program:bind elect_recv_sock:");
-	}
-	fcntl(waitForBroadcast_sock, F_SETFL, O_NONBLOCK);
-
-	do
-	{
-		printf("master:get Program:waiting for broadcast\n");
-		continue_i = 1;
-		while (continue_i)
-		{
-
-			recvReturn_i = recvfrom(waitForBroadcast_sock, &listenBuff[0], sizeof listenBuff, 0,
-					(struct sockaddr*) &connect_addr, &connect_len);
-			getProgram_ptr->working = 1;
-			if (getProgram_ptr->exitSignal)
-			{
-				printf("master:get Program:exiting \n");
-				close(waitForBroadcast_sock);
-				getProgram_ptr->working = 0;
-				return NULL;
-			}
-			if (recvReturn_i > 0)
-				continue_i = 0;
-			if (recvReturn_i == -1)
-			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same leaving both if there should be a problem
-				{
-					sleep(1);
-				}
-				else
-				{
-					continue_i = 0;
-				}
-
-			}
-		}
-		if (recvReturn_i < 0)
-		{
-
-			break;
-
-		}
-
-		printf("master:get Program:received:%s\n", listenBuff);
-		if (!strcmp(listenBuff, "fetch"))
-		{
-
-			sendto(waitForBroadcast_sock, &ack[0], sizeof ack, 0, (struct sockaddr*) &connect_addr,
-					connect_len);
-			close(waitForBroadcast_sock);
-			sleep(1);
-			connect_addr.sin_port = htons(TCP_GET_PROGRAM);
-			//printf("master:getProgram: connecting\n");
-
-			if (connect(openConnection_sock, (struct sockaddr*) &connect_addr,	connect_len) < 0)
-				critErr("master: get Program: connecterror");
-			pFile = fopen("data.tar", "wb");
-			if (pFile == NULL)
-			{
-				fputs("master:get Program: File error", stderr);
-				exit(1);
-			}
-			//printf("master:get Program: receiving file\n");
-			do
-			{
-				recvReturn_i = recv(openConnection_sock, &buffer[0], BUFFERSIZE, 0);
-				if (recvReturn_i < 0)
-					printf("master:get Program: recverror:%s\n", strerror(errno));
-				else{
-					//printf("master:get Program: recv data = %d\n", recvReturn_i);
-				}
-				fwrite(&buffer[0], 1, recvReturn_i, pFile);
-			} while (recvReturn_i > 0);
-
-			fclose(pFile);
-			close(openConnection_sock);
-			received_i = 1;
-		}
-	} while (received_i == 0);
-	system("tar xf data.tar");
-	Distribution_ptr = createDistributionXML(getProgram_ptr->clusterInfo_ptr);
-
-	char * ret = NULL;
-	//printf("master:get Program: dist ptr = %p\n", Distribution_ptr);
-	if(pthread_mutex_lock(&getProgram_ptr->workReady_ptr->mtx))
-				perror("master:get Program: mutex lock:");
-	if (Distribution_ptr)
-	{
-		ret = distributeData(Distribution_ptr);
-		xmlFreeDoc(Distribution_ptr);
-	}
-	printf("master:get Program: ret = %p", ret);
-
-	printf("master: get Program: condition mutex locked and wait\n");
-	if(pthread_cond_wait(&getProgram_ptr->workReady_ptr->cond,&getProgram_ptr->workReady_ptr->mtx))
-		perror("master:get Program:condition wait:");
-	printf("master: get Program: condition continued\n");
-
-
-	if ((returnSolution_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		if ((waitForBroadcast_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		{
 			critErr("master:get Program:wait_socket=");
 		}
-	if( 0 > connect(returnSolution_sock, (struct sockaddr*) &connect_addr,
-						connect_len))
-			critErr("master: get Program: solution connect error");
-	if (ret)
-	{
-		 send(returnSolution_sock,ret,sizeof(errormessage),0);
-	}
-	else
-	{
 
-		pFile = fopen(RETURN_NAME, "rb");
+		if ((openConnection_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		{
+			critErr("master:get Program:connect_socket=");
+		}
+
+		fillSockaddrAny(&listen_addr, UDP_OPEN_TCP_CONNECTION_FOR_PROGRAM_TRANSFER);
+		if ((bind(waitForBroadcast_sock, (struct sockaddr*) &listen_addr, sizeof(listen_addr))) < 0)
+		{
+			critErr("master:get Program:bind elect_recv_sock:");
+		}
+		fcntl(waitForBroadcast_sock, F_SETFL, O_NONBLOCK);
+
+		do
+		{
+			printf("master:get Program:waiting for broadcast\n");
+			continue_i = 1;
+			while (continue_i)
+			{
+				getProgram_ptr->working = 0;
+				recvReturn_i = recvfrom(waitForBroadcast_sock, &listenBuff[0], sizeof listenBuff, 0,
+						(struct sockaddr*) &connect_addr, &connect_len);
+				getProgram_ptr->working = 1;
+				if (getProgram_ptr->exitSignal)
+				{
+					printf("master:get Program:exiting \n");
+					close(waitForBroadcast_sock);
+					getProgram_ptr->working = 0;
+					return NULL;
+				}
+				if (recvReturn_i > 0)
+					continue_i = 0;
+				if (recvReturn_i == -1)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK) //should be the same leaving both if there should be a problem
+					{
+						sleep(1);
+					}
+					else
+					{
+						continue_i = 0;
+					}
+
+				}
+			}
+			if (recvReturn_i < 0)
+			{
+
+				break;
+
+			}
+
+			printf("master:get Program:received:%s\n", listenBuff);
+			if (!strcmp(listenBuff, "fetch"))
+			{
+
+				sendto(waitForBroadcast_sock, &ack[0], sizeof ack, 0, (struct sockaddr*) &connect_addr,
+						connect_len);
+				close(waitForBroadcast_sock);
+				sleep(1);
+				connect_addr.sin_port = htons(TCP_GET_PROGRAM);
+				//printf("master:getProgram: connecting\n");
+
+				if (connect(openConnection_sock, (struct sockaddr*) &connect_addr, connect_len) < 0)
+					critErr("master: get Program: connecterror");
+				pFile = fopen("data.tar", "wb");
 				if (pFile == NULL)
 				{
-					char msg[50];
-					memset(msg,0,sizeof msg);
-					sprintf(msg,"master: get Program:return file error:%d",errno);
-					puts(msg);
-					send(returnSolution_sock,msg,sizeof(msg),0);
+					fputs("master:get Program: File error", stderr);
+					exit(1);
 				}
-				else
+				//printf("master:get Program: receiving file\n");
+				do
 				{
-					do
-							{
-								// copy the file into the buffer:
-								result = fread(buffer, 1, BUFFERSIZE, pFile);
-								if (result != BUFFERSIZE && feof(pFile) == 0)
-								{
-									printf("master:get Program :Reading error\n");
-									exit(-1);
-								}
-								sendReturn_i = send(returnSolution_sock, &buffer[0], result, 0);
-								if (sendReturn_i < 0)
-									printf("master: get Program: senderror:%s\n", strerror(errno));
-								else{
-									//printf("send data = %d\n", sendReturn_i);
-								}
-							} while (feof(pFile) == 0);
+					recvReturn_i = recv(openConnection_sock, &buffer[0], BUFFERSIZE, 0);
+					if (recvReturn_i < 0)
+						printf("master:get Program: recverror:%s\n", strerror(errno));
+					else
+					{
+						//printf("master:get Program: recv data = %d\n", recvReturn_i);
+					}
+					fwrite(&buffer[0], 1, recvReturn_i, pFile);
+				} while (recvReturn_i > 0);
 
-				}
+				fclose(pFile);
+				close(openConnection_sock);
+				received_i = 1;
+			}
+		} while (received_i == 0);
+		system("tar xf data.tar");
+		Distribution_ptr = createDistributionXML(getProgram_ptr->clusterInfo_ptr);
+
+		char * ret = NULL;
+		//printf("master:get Program: dist ptr = %p\n", Distribution_ptr);
+		if (pthread_mutex_lock(&getProgram_ptr->workReady_ptr->mtx))
+			perror("master:get Program: mutex lock:");
+		if (Distribution_ptr)
+		{
+			ret = distributeData(Distribution_ptr);
+			xmlFreeDoc(Distribution_ptr);
+		}
+		else
+		{
+			ret = errormessage;
+			strcpy(errormessage, "XML file was not wellformed");
+		}
+		printf("master:get Program: ret = %p", ret);
+
+		printf("master: get Program: condition mutex locked and wait\n");
+		if (pthread_cond_wait(&getProgram_ptr->workReady_ptr->cond,
+				&getProgram_ptr->workReady_ptr->mtx))
+			perror("master:get Program:condition wait:");
+		printf("master: get Program: condition continued\n");
+
+		if ((returnSolution_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		{
+			critErr("master:get Program:wait_socket=");
+		}
+		if (0 > connect(returnSolution_sock, (struct sockaddr*) &connect_addr, connect_len))
+			critErr("master: get Program: solution connect error");
+		if (ret)
+		{
+			send(returnSolution_sock, ret, sizeof(errormessage), 0);
+		}
+		else
+		{
+
+			pFile = fopen(RETURN_NAME, "rb");
+			if (pFile == NULL)
+			{
+				char msg[60];
+				memset(msg, 0, sizeof msg);
+				sprintf(msg, "master: get Program:return file error:%d", errno);
+				puts(msg);
+				send(returnSolution_sock, msg, sizeof(msg), 0);
+			}
+			else
+			{
+				do
+				{
+					// copy the file into the buffer:
+					result = fread(buffer, 1, BUFFERSIZE, pFile);
+					if (result != BUFFERSIZE && feof(pFile) == 0)
+					{
+						printf("master:get Program :Reading error\n");
+						exit(-1);
+					}
+					sendReturn_i = send(returnSolution_sock, &buffer[0], result, 0);
+					if (sendReturn_i < 0)
+						printf("master: get Program: senderror:%s\n", strerror(errno));
+					else
+					{
+						//printf("send data = %d\n", sendReturn_i);
+					}
+				} while (feof(pFile) == 0);
+
+			}
+		}
+
+		close(returnSolution_sock);
+		if (pthread_mutex_unlock(&getProgram_ptr->workReady_ptr->mtx))
+			perror("master:get Program: mutex unlock:");
+		printf("master: get Program: condition mutex unlocked \n");
+		getProgram_ptr->working = 0;
+		printf("master:get Program: exit signal = %d\n", getProgram_ptr->exitSignal);
 	}
-
-	close(returnSolution_sock);
-	if(pthread_mutex_unlock(&getProgram_ptr->workReady_ptr->mtx))
-		perror("master:get Program: mutex unlock:");
-	printf("master: get Program: condition mutex unlocked \n");
-	getProgram_ptr->working = 0;
-	printf("master:get Program: exit signal = %d\n",getProgram_ptr->exitSignal);
-}
 	return NULL;
 }
 
@@ -740,7 +752,7 @@ void * distributeData(void * args)
 	xmlDocPtr doc = args;
 	char * errormarker = NULL;
 
-	int  thread_i = 0, allocatedThreads_i = EST_NUM_BOARD;
+	int thread_i = 0, allocatedThreads_i = EST_NUM_BOARD;
 
 	pthread_t *send_threads = malloc(allocatedThreads_i * sizeof(pthread_t));
 	if (send_threads == NULL)

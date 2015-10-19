@@ -83,6 +83,8 @@ void *receive_file(void * args);
 
 /** \brief calls the receive functions unpacks the archive and starts the script and executable
  *
+ *	takes cond_mtx workReady_ptr as an argument
+ *	returns NULL
  */
 void *fetchDataAndExecute(void *args);
 

@@ -78,7 +78,7 @@ struct cond_mtx
 };
 struct var_mtx
 {
-	volatile int var;
+	int var;
 	pthread_mutex_t mtx;
 };
 
@@ -91,11 +91,8 @@ struct slave_args
 	uint8_t *subgroup_ptr;
 };
 
-
-
-/** \brief  struct in for sending the file_info over ethernet, shall be copied into the buffer
+/** \brief  struct for sending the file_info over ethernet, shall be copied into the buffer
  *
- * WARNING this experimental and might not work
  */
 struct fileInfo_bufferformat
 {
@@ -113,7 +110,7 @@ struct node_data
 	uint8_t type_u8;
 	/// last alive counter number when it answered
 	uint8_t lastAlive_u8;
-	/// does it have a job running
+	/// does it have a job running, not in use at the moment should be incorporated to getProgram.
 	uint8_t nowActive_u8;
 	/// subgroup number(not used at the moment)
 	uint8_t group_u8;
@@ -145,7 +142,7 @@ void fillSockaddrAny(struct sockaddr_in *any_addr, uint16_t port);
 ///fills the sockaddr_in struct with the target of the loopback address
 void fillSockaddrLoop(struct sockaddr_in *loop_addr, uint16_t port);
 
-///reads the IP with getifaddrs and returns the networf format of the IP address, designed for one active IF
+///reads the IP with getifaddrs and returns the network format of the IP address, designed for one active IF
 uint32_t getIP();
 
 /**\\brief reads the MAC from "/sys/class/net/eth0/address"
@@ -173,10 +170,12 @@ int compareNodes(const void * a, const void * b);
  */
 char* hostToDottedIP(uint32_t ip);
 
-// BASICS_H_INCLUDED
-#endif
-
-/** \brief
+/** returns the size of the file in regard of postion of fseek(fh, 0, SEEK_END)
+ *  in rare cases this might give wrong valuess
  *
  */
 long int fsize(char* file);
+
+// BASICS_H_INCLUDED
+#endif
+

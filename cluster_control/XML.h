@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
 
 #define MIN_SHIFT 0

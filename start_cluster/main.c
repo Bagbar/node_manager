@@ -1,12 +1,3 @@
-/*
- ============================================================================
- Name        : udp_client_linux.c
- Author      : 
- Version     :
- Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
- ============================================================================
- */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -50,7 +41,7 @@ int main(int argc, const char* argv[])
 		FILE * pFile;
 		int broadcast_sock, sendProg_sock,sendProg_accept,recvSolution_sock,recvSolution_accept;
 		char broadSendBuff[10] = "fetch", broadRecvBuff[100], fileSendBuff[BUFFERSIZE],fileRecvBuff[BUFFERSIZE];
-		struct sockaddr_in broadcast_addr, sendProgram_addr, recvSolution_addr, master_addr;
+		struct sockaddr_in broadcast_addr, sendProgram_addr, master_addr,recvSolution_addr;
 				socklen_t broadcast_len = sizeof broadcast_addr, connect_len = sizeof sendProgram_addr, master_len= sizeof master_addr;
 
 		printf("opening: %s\n",argv[1]);
